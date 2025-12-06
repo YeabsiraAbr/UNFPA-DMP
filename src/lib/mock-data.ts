@@ -43,8 +43,8 @@ export const mockUsers: User[] = [
   },
   {
     id: "u4",
-    name: "Admin Yohannes Bekele",
-    email: "yohannes.bekele@unfpa.org",
+    name: "Admin Yeabsira Abraham",
+    email: "yeabsira.abraham@unfpa.org",
     role: "admin",
     lastActive: new Date().toISOString(),
     status: "online",
@@ -705,5 +705,3 @@ export const mockSyncStatus: SyncStatus = {
   conflicts: 1,
   isOnline: true,
 };
-
-
