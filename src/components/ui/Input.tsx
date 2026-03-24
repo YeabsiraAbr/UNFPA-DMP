@@ -39,9 +39,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               error
                 ? 'border-red-500 focus:ring-red-500'
                 : 'border-slate-300 dark:border-slate-600',
-              Icon && iconPosition === 'left' && 'pl-10',
-              Icon && iconPosition === 'right' && 'pr-10',
-              'px-4 py-2.5 text-sm',
+              Icon && iconPosition === 'left' ? 'pl-10 pr-4' : Icon && iconPosition === 'right' ? 'pl-4 pr-10' : 'px-4',
+              'py-2.5 text-sm',
               className
             )}
             {...props}
