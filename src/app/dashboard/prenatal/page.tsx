@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Modal } from '@/components/ui/Modal'
 import { Progress } from '@/components/ui/Progress'
-import { mockPatients, mockPrenatalVisits } from '@/lib/mock-data'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { patientService, visitService } from '@/services'
+import type { Patient as ApiPatient, Visit as ApiVisit } from '@/services/types'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
 import {
   LineChart,
@@ -40,11 +42,118 @@ import {
 } from 'lucide-react'
 import type { PrenatalVisit, Patient } from '@/lib/types'
 
+function patientFromApi(p: ApiPatient): Patient {
+  return {
+    id: p.id,
+    fullName: p.fullName,
+    age: p.age ?? 0,
+    dateOfBirth: '',
+    idNumber: p.idNumber ?? p.unfpId ?? '',
+    address: p.address ?? '',
+    village: p.subCity ?? p.woreda ?? '',
+    emergencyContact: p.emergencyContact ?? '',
+    emergencyPhone: p.emergencyPhone ?? '',
+    pregnancyStatus: 'pregnant',
+    gravida: 0,
+    para: 0,
+    riskLevel: 'low',
+    riskScore: 0,
+    riskFactors: [],
+    registeredAt: p.createdAt ?? '',
+    assignedMidwife: '',
+    syncStatus: 'synced',
+    clinicId: '',
+  }
+}
+
+function visitToPrenatal(v: ApiVisit): PrenatalVisit {
+  const extra = v as ApiVisit & {
+    remarks?: string
+    visitNumber?: number
+    fetalHeartRate?: string
+    uterineHeightWks?: number
+  }
+  const bpStr = v.bloodPressure ?? ''
+  const bpParts = bpStr.split('/').map((s) => parseFloat(s.trim()) || 0)
+  const systolic = bpParts[0] ?? 0
+  const diastolic = bpParts[1] ?? 0
+  const weeks = typeof extra.uterineHeightWks === 'number' ? extra.uterineHeightWks : 0
+  const fhr = extra.fetalHeartRate
+  return {
+    id: v.id,
+    patientId: v.patientId,
+    visitDate: v.visitDate,
+    visitNumber: typeof extra.visitNumber === 'number' ? extra.visitNumber : 1,
+    gestationalAge: { weeks, days: 0 },
+    vitals: {
+      bloodPressureSystolic: systolic,
+      bloodPressureDiastolic: diastolic,
+      weight: v.weight ?? 0,
+      temperature: v.temperature ?? 0,
+      pulse: 0,
+      respiratoryRate: 0,
+      fetalHeartRate: fhr ? parseInt(fhr, 10) : undefined,
+    },
+    symptoms: [],
+    medications: [],
+    notes: typeof extra.remarks === 'string' ? extra.remarks : '',
+    riskFlags: [],
+    conductedBy: '',
+    syncStatus: 'synced',
+  }
+}
+
 export default function PrenatalCarePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedVisit, setSelectedVisit] = useState<PrenatalVisit | null>(null)
   const [showVisitModal, setShowVisitModal] = useState(false)
   const [showNewVisitModal, setShowNewVisitModal] = useState(false)
+  const [visits, setVisits] = useState<PrenatalVisit[]>([])
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      setLoading(true)
+      try {
+        const res = await patientService.getAll()
+        if (!res.success || !res.patients?.length) {
+          if (!cancelled) {
+            setPatients([])
+            setVisits([])
+          }
+          return
+        }
+        const mappedPatients = res.patients.map(patientFromApi)
+        if (cancelled) return
+        setPatients(mappedPatients)
+        const allVisits: PrenatalVisit[] = []
+        for (const p of res.patients.slice(0, 20)) {
+          try {
+            const vRes = await visitService.getByPatient(p.id)
+            if (vRes.success && vRes.visits?.length) {
+              allVisits.push(...vRes.visits.map(visitToPrenatal))
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+        if (!cancelled) setVisits(allVisits)
+      } catch {
+        if (!cancelled) {
+          setPatients([])
+          setVisits([])
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Mock vitals trend data for chart
   const vitalsTrendData = [
@@ -56,7 +165,7 @@ export default function PrenatalCarePage() {
   ]
 
   const getPatientForVisit = (visit: PrenatalVisit): Patient | undefined => {
-    return mockPatients.find((p) => p.id === visit.patientId)
+    return patients.find((p) => p.id === visit.patientId)
   }
 
   const handleViewVisit = (visit: PrenatalVisit) => {
@@ -64,10 +173,21 @@ export default function PrenatalCarePage() {
     setShowVisitModal(true)
   }
 
-  const filteredVisits = mockPrenatalVisits.filter((visit) => {
+  const filteredVisits = visits.filter((visit) => {
     const patient = getPatientForVisit(visit)
     return patient?.fullName.toLowerCase().includes(searchTerm.toLowerCase())
   })
+
+  if (loading) {
+    return (
+      <DashboardLayout
+        title="Prenatal Care"
+        subtitle="Track prenatal visits, vitals, and patient progress"
+      >
+        <LoadingState message="Loading prenatal data…" />
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout
@@ -80,7 +200,7 @@ export default function PrenatalCarePage() {
           <div className="flex items-center gap-3">
             <Calendar className="w-8 h-8 opacity-80" />
             <div>
-              <p className="text-3xl font-bold">{mockPrenatalVisits.length}</p>
+              <p className="text-3xl font-bold">{visits.length}</p>
               <p className="text-sm opacity-80">Total Visits</p>
             </div>
           </div>
@@ -90,7 +210,7 @@ export default function PrenatalCarePage() {
             <Baby className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {mockPatients.filter((p) => p.pregnancyStatus === 'pregnant').length}
+                {patients.filter((p) => p.pregnancyStatus === 'pregnant').length}
               </p>
               <p className="text-sm opacity-80">Active Pregnancies</p>
             </div>
@@ -101,7 +221,7 @@ export default function PrenatalCarePage() {
             <AlertTriangle className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {mockPrenatalVisits.filter((v) => v.riskFlags.length > 0).length}
+                {visits.filter((v) => v.riskFlags.length > 0).length}
               </p>
               <p className="text-sm opacity-80">Visits with Risk Flags</p>
             </div>

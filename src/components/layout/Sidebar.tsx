@@ -6,36 +6,45 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
+  ClipboardList,
   Baby,
+  Stethoscope,
+  HeartPulse,
   Image,
+  Heart,
   Shield,
+  ShieldAlert,
   MessageSquare,
   Bell,
   BarChart3,
   Brain,
-  Settings,
   RefreshCcw,
-  Building2,
+  Settings,
   LogOut,
   ChevronLeft,
-  Heart,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Avatar } from "../ui/Avatar";
-import { currentUser } from "@/lib/mock-data";
+import { profileService } from "@/services";
+
+const fallbackUser = { id: '', name: 'User', email: '', role: 'admin' as const, lastActive: '', status: 'online' as const }
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Patients", href: "/dashboard/patients", icon: Users },
+  { name: "ANC Records", href: "/dashboard/anc", icon: ClipboardList },
   { name: "Prenatal Care", href: "/dashboard/prenatal", icon: Baby },
+  { name: "Delivery", href: "/dashboard/delivery", icon: Stethoscope },
+  { name: "PNC", href: "/dashboard/pnc", icon: HeartPulse },
   { name: "Ultrasound", href: "/dashboard/ultrasound", icon: Image },
+  { name: "SRH", href: "/dashboard/srh", icon: Heart },
   { name: "GBV Reports", href: "/dashboard/gbv", icon: Shield },
-  { name: "Teleconsult", href: "/dashboard/teleconsult", icon: MessageSquare },
+  { name: "GBV Screening", href: "/dashboard/gbv-screening", icon: ShieldAlert },
+  { name: "Messages", href: "/dashboard/messages", icon: MessageSquare },
   { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
   { name: "AI Risk", href: "/dashboard/risk", icon: Brain },
   { name: "Sync Status", href: "/dashboard/sync", icon: RefreshCcw },
-  { name: "Clinics", href: "/dashboard/clinics", icon: Building2 },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -43,10 +52,31 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [currentUser, setCurrentUser] = useState(fallbackUser);
+
+  useEffect(() => {
+    profileService.getMe().then(res => {
+      if (res.success && res.profile) {
+        setCurrentUser({
+          id: res.profile.id,
+          name: res.profile.fullName || fallbackUser.name,
+          email: fallbackUser.email,
+          role: fallbackUser.role,
+          lastActive: new Date().toISOString(),
+          status: "online" as const,
+        });
+      }
+    }).catch(() => {});
+  }, []);
 
   const handleLogout = () => {
+    const refreshToken = localStorage.getItem("unfpa_refresh_token");
+    if (refreshToken) {
+      import("@/services").then(({ authService }) => authService.logout(refreshToken)).catch(() => {});
+    }
     localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("userEmail");
+    localStorage.removeItem("unfpa_access_token");
+    localStorage.removeItem("unfpa_refresh_token");
     router.push("/");
   };
 

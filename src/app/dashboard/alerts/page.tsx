@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
-import { mockAlerts } from '@/lib/mock-data'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import {
   Bell,
@@ -18,7 +17,6 @@ import {
   Check,
   CheckCheck,
   Trash2,
-  Filter,
   ArrowRight,
   Shield,
 } from 'lucide-react'
@@ -27,7 +25,7 @@ import type { Alert } from '@/lib/types'
 export default function AlertsPage() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
-  const [alerts, setAlerts] = useState(mockAlerts)
+  const [alerts, setAlerts] = useState<Alert[]>([])
 
   const filteredAlerts = alerts.filter((alert) => {
     const matchesType = typeFilter === 'all' || alert.type === typeFilter
@@ -248,7 +246,7 @@ export default function AlertsPage() {
             {filteredAlerts.length === 0 && (
               <div className="text-center py-12 text-slate-500">
                 <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No alerts matching your filters</p>
+                <p>No alerts available</p>
               </div>
             )}
           </div>

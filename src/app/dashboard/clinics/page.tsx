@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
-import { mockClinics } from '@/lib/mock-data'
+import { patientService } from '@/services'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import {
   Building2,
@@ -31,8 +31,20 @@ export default function ClinicsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null)
   const [showClinicModal, setShowClinicModal] = useState(false)
+  const [clinics, setClinics] = useState<Clinic[]>([])
 
-  const filteredClinics = mockClinics.filter((clinic) =>
+  useEffect(() => {
+    patientService.getAll().then(res => {
+      if (res.success && res.patients?.length) {
+        const facilityMap = new Map<string, number>()
+        res.patients.forEach(p => {
+          if (p.facility) facilityMap.set(p.facility, (facilityMap.get(p.facility) ?? 0) + 1)
+        })
+      }
+    }).catch(() => {})
+  }, [])
+
+  const filteredClinics = clinics.filter((clinic) =>
     clinic.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     clinic.location.toLowerCase().includes(searchTerm.toLowerCase())
   )
@@ -53,7 +65,7 @@ export default function ClinicsPage() {
           <div className="flex items-center gap-3">
             <Building2 className="w-8 h-8 opacity-80" />
             <div>
-              <p className="text-3xl font-bold">{mockClinics.length}</p>
+              <p className="text-3xl font-bold">{clinics.length}</p>
               <p className="text-sm opacity-80">Total Facilities</p>
             </div>
           </div>
@@ -63,7 +75,7 @@ export default function ClinicsPage() {
             <Truck className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {mockClinics.filter((c) => c.type === 'mobile').length}
+                {clinics.filter((c) => c.type === 'mobile').length}
               </p>
               <p className="text-sm opacity-80">Mobile Units</p>
             </div>
@@ -74,7 +86,7 @@ export default function ClinicsPage() {
             <Home className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {mockClinics.filter((c) => c.type === 'fixed').length}
+                {clinics.filter((c) => c.type === 'fixed').length}
               </p>
               <p className="text-sm opacity-80">Fixed Facilities</p>
             </div>
@@ -85,7 +97,7 @@ export default function ClinicsPage() {
             <Users className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {mockClinics.reduce((sum, c) => sum + c.patientCount, 0)}
+                {clinics.reduce((sum, c) => sum + c.patientCount, 0)}
               </p>
               <p className="text-sm opacity-80">Total Patients</p>
             </div>
@@ -113,6 +125,12 @@ export default function ClinicsPage() {
 
       {/* Clinics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredClinics.length === 0 && (
+          <div className="col-span-full text-center py-16 text-slate-500">
+            <Building2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p>{clinics.length === 0 ? 'No clinics available' : 'No clinics match your search'}</p>
+          </div>
+        )}
         {filteredClinics.map((clinic, index) => (
           <Card
             key={clinic.id}

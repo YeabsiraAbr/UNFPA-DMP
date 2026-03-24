@@ -5,12 +5,65 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Avatar } from '../ui/Avatar'
 import { Progress } from '../ui/Progress'
-import { AlertTriangle, ArrowRight, Activity } from 'lucide-react'
-import { mockPatients } from '@/lib/mock-data'
+import { AlertTriangle, ArrowRight, Activity, Loader2 } from 'lucide-react'
+import { analyticsService } from '@/services'
+import { useState, useEffect } from 'react'
 
-const highRiskPatients = mockPatients.filter(p => p.riskLevel === 'high' || p.riskLevel === 'critical')
+type HighRiskRow = {
+  id: string
+  fullName: string
+  idNumber: string
+  age: number
+  gravida: number
+  para: number
+  riskScore: number
+  riskLevel: 'high' | 'critical'
+  riskFactors: string[]
+}
 
 export function HighRiskPatients() {
+  const [loading, setLoading] = useState(true)
+  const [highRiskPatients, setHighRiskPatients] = useState<HighRiskRow[]>([])
+
+  useEffect(() => {
+    let cancelled = false
+    analyticsService.getHighRiskPatients().then(res => {
+      if (cancelled) return
+      if (res.success && res.patients?.length) {
+        setHighRiskPatients(
+          res.patients.map(hp => {
+            const factors = hp.riskFactors ?? []
+            const riskLevel: 'high' | 'critical' = factors.some(f =>
+              /critical|severe/i.test(f)
+            )
+              ? 'critical'
+              : 'high'
+            return {
+              id: hp.patient?.id ?? '',
+              fullName: hp.patient?.fullName ?? 'Unknown',
+              idNumber: hp.patient?.idNumber ?? hp.patient?.unfpId ?? '',
+              age: hp.patient?.age ?? 0,
+              gravida: 0,
+              para: 0,
+              riskScore: Math.min(100, 55 + factors.length * 8),
+              riskLevel,
+              riskFactors: factors,
+            }
+          })
+        )
+      } else {
+        setHighRiskPatients([])
+      }
+    }).catch(() => {
+      if (!cancelled) setHighRiskPatients([])
+    }).finally(() => {
+      if (!cancelled) setLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <Card variant="elevated">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -18,9 +71,21 @@ export function HighRiskPatients() {
           <AlertTriangle className="w-5 h-5 text-amber-500" />
           <CardTitle>High Risk Patients</CardTitle>
         </div>
-        <Badge variant="danger">{highRiskPatients.length} patients</Badge>
+        <Badge variant="danger">
+          {loading ? '…' : `${highRiskPatients.length} patients`}
+        </Badge>
       </CardHeader>
       <CardContent>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">Loading high-risk patients…</p>
+          </div>
+        ) : highRiskPatients.length === 0 ? (
+          <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-8">
+            No high-risk patients to show.
+          </p>
+        ) : (
         <div className="space-y-4">
           {highRiskPatients.map((patient, index) => (
             <div
@@ -100,6 +165,8 @@ export function HighRiskPatients() {
             </div>
           ))}
         </div>
+        )}
+        {!loading && (
         <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
           <a
             href="/dashboard/patients?risk=high"
@@ -109,6 +176,7 @@ export function HighRiskPatients() {
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>
+        )}
       </CardContent>
     </Card>
   )

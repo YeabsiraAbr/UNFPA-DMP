@@ -1,0 +1,3816 @@
+"swaggerDoc": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "Digital Maternity Backend API",
+      "version": "1.0.0",
+      "description": "Comprehensive API documentation for Digital Maternity Backend - A system for managing maternal health records, ANC visits, deliveries, PNC visits, GBV screening, and SRH registrations.",
+      "contact": {
+        "name": "API Support"
+      }
+    },
+    "servers": [
+      {
+        "url": "https://digital-maternity-backend.onrender.com",
+        "description": "Development server"
+      },
+      {
+        "url": "https://digital-maternity-backend.onrender.com",
+        "description": "Production server"
+      }
+    ],
+    "components": {
+      "securitySchemes": {
+        "bearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "JWT",
+          "description": "Enter JWT token"
+        }
+      },
+      "schemas": {
+        "Error": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "example": false
+            },
+            "message": {
+              "type": "string",
+              "example": "Error message"
+            }
+          }
+        },
+        "Success": {
+          "type": "object",
+          "properties": {
+            "success": {
+              "type": "boolean",
+              "example": true
+            }
+          }
+        },
+        "Patient": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "fullName": {
+              "type": "string"
+            },
+            "unfpId": {
+              "type": "string"
+            },
+            "cardNo": {
+              "type": "string",
+              "nullable": true
+            },
+            "phone": {
+              "type": "string",
+              "nullable": true
+            },
+            "email": {
+              "type": "string",
+              "nullable": true
+            },
+            "age": {
+              "type": "integer",
+              "nullable": true
+            },
+            "address": {
+              "type": "string",
+              "nullable": true
+            },
+            "subCity": {
+              "type": "string",
+              "nullable": true
+            },
+            "woreda": {
+              "type": "string",
+              "nullable": true
+            },
+            "kebele": {
+              "type": "string",
+              "nullable": true
+            },
+            "houseNo": {
+              "type": "string",
+              "nullable": true
+            },
+            "facility": {
+              "type": "string",
+              "nullable": true
+            },
+            "maritalStatus": {
+              "type": "string",
+              "nullable": true
+            },
+            "idNumber": {
+              "type": "string",
+              "nullable": true
+            },
+            "emergencyContact": {
+              "type": "string",
+              "nullable": true
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "User": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "phone": {
+              "type": "string"
+            },
+            "fullName": {
+              "type": "string",
+              "nullable": true
+            },
+            "isActive": {
+              "type": "boolean"
+            },
+            "createdAt": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        },
+        "ANCRecord": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "patientId": {
+              "type": "string"
+            },
+            "lmp": {
+              "type": "string",
+              "format": "date",
+              "nullable": true
+            },
+            "edd": {
+              "type": "string",
+              "format": "date",
+              "nullable": true
+            },
+            "gravida": {
+              "type": "integer",
+              "nullable": true
+            },
+            "para": {
+              "type": "integer",
+              "nullable": true
+            },
+            "diabetesMellitus": {
+              "type": "boolean",
+              "nullable": true
+            },
+            "hiv": {
+              "type": "string",
+              "nullable": true
+            },
+            "bloodGroupRh": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        },
+        "Delivery": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "patientId": {
+              "type": "string"
+            },
+            "deliveryDate": {
+              "type": "string",
+              "format": "date-time",
+              "nullable": true
+            },
+            "amtsl": {
+              "type": "string",
+              "enum": [
+                "Ergomtrine",
+                "Oxytocine",
+                "Misoprostol"
+              ],
+              "nullable": true
+            },
+            "placenta": {
+              "type": "string",
+              "enum": [
+                "Completed",
+                "Incomplete",
+                "CCT",
+                "MRP"
+              ],
+              "nullable": true
+            },
+            "newborns": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Newborn"
+              }
+            }
+          }
+        },
+        "Newborn": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "quantity": {
+              "type": "string",
+              "enum": [
+                "Single",
+                "Multiple"
+              ],
+              "nullable": true
+            },
+            "sex": {
+              "type": "string",
+              "enum": [
+                "Male",
+                "Female"
+              ],
+              "nullable": true
+            },
+            "termStatus": {
+              "type": "string",
+              "enum": [
+                "Term",
+                "Preterm"
+              ],
+              "nullable": true
+            },
+            "alive": {
+              "type": "boolean",
+              "nullable": true
+            },
+            "apgarScore": {
+              "type": "integer",
+              "nullable": true
+            },
+            "birthWeightGm": {
+              "type": "number",
+              "nullable": true
+            },
+            "lengthCm": {
+              "type": "number",
+              "nullable": true
+            }
+          }
+        },
+        "PNCVisit": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "patientId": {
+              "type": "string"
+            },
+            "deliveryId": {
+              "type": "string",
+              "nullable": true
+            },
+            "bloodPressure": {
+              "type": "string",
+              "nullable": true
+            },
+            "temperature": {
+              "type": "number",
+              "nullable": true
+            },
+            "babyBreathing": {
+              "type": "string",
+              "nullable": true
+            },
+            "babyBreastFeeding": {
+              "type": "string",
+              "nullable": true
+            },
+            "hivTested": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        },
+        "GBVScreening": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "patientId": {
+              "type": "string"
+            },
+            "gbvHistory": {
+              "type": "string",
+              "nullable": true
+            },
+            "temperature": {
+              "type": "string",
+              "nullable": true
+            },
+            "weightKg": {
+              "type": "number",
+              "nullable": true
+            },
+            "heightCm": {
+              "type": "number",
+              "nullable": true
+            },
+            "bmiIndex": {
+              "type": "number",
+              "nullable": true
+            },
+            "workingDiagnosis": {
+              "type": "string",
+              "nullable": true
+            },
+            "treatmentPlan": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        },
+        "SRHRegistration": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "patientId": {
+              "type": "string"
+            },
+            "history": {
+              "type": "string",
+              "nullable": true
+            },
+            "temperature": {
+              "type": "string",
+              "nullable": true
+            },
+            "weightKg": {
+              "type": "number",
+              "nullable": true
+            },
+            "heightCm": {
+              "type": "number",
+              "nullable": true
+            },
+            "bmiIndex": {
+              "type": "number",
+              "nullable": true
+            },
+            "workingDiagnosis": {
+              "type": "string",
+              "nullable": true
+            },
+            "treatmentPlan": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "bearerAuth": []
+      }
+    ],
+    "paths": {
+      "/api/v1/analytics/dashboard": {
+        "get": {
+          "summary": "Get dashboard statistics",
+          "tags": [
+            "Analytics"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Dashboard statistics",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean"
+                      },
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "totalPatients": {
+                            "type": "integer",
+                            "description": "Total number of registered patients"
+                          },
+                          "activePregnancies": {
+                            "type": "integer",
+                            "description": "Number of active pregnancies"
+                          },
+                          "highRiskCount": {
+                            "type": "integer",
+                            "description": "Number of high-risk patients"
+                          },
+                          "appointmentsToday": {
+                            "type": "integer",
+                            "description": "Number of appointments scheduled for today"
+                          },
+                          "totalVisits": {
+                            "type": "integer",
+                            "description": "Total number of visits"
+                          },
+                          "upcomingAppointments": {
+                            "type": "integer",
+                            "description": "Number of appointments in the next 7 days"
+                          },
+                          "patientsWithReferrals": {
+                            "type": "integer",
+                            "description": "Number of patients with referrals"
+                          },
+                          "totalDeliveries": {
+                            "type": "integer",
+                            "description": "Total number of deliveries"
+                          },
+                          "totalPNCVisits": {
+                            "type": "integer",
+                            "description": "Total number of PNC visits"
+                          },
+                          "totalGBVCases": {
+                            "type": "integer",
+                            "description": "Total number of GBV cases"
+                          },
+                          "patientsThisMonth": {
+                            "type": "integer",
+                            "description": "Number of patients registered this month"
+                          },
+                          "visitsThisMonth": {
+                            "type": "integer",
+                            "description": "Number of visits this month"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/analytics/appointments/today": {
+        "get": {
+          "summary": "Get today's appointments with details",
+          "tags": [
+            "Analytics"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Today's appointments",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean"
+                      },
+                      "count": {
+                        "type": "integer"
+                      },
+                      "appointments": {
+                        "type": "array",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/analytics/high-risk": {
+        "get": {
+          "summary": "Get high-risk patients with details",
+          "tags": [
+            "Analytics"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "High-risk patients list",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean"
+                      },
+                      "count": {
+                        "type": "integer"
+                      },
+                      "patients": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "patient": {
+                              "type": "object"
+                            },
+                            "riskFactors": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/anc": {
+        "post": {
+          "summary": "Create ANC record",
+          "tags": [
+            "ANC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "patientId"
+                  ],
+                  "properties": {
+                    "patientId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lmp": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "edd": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "gravida": {
+                      "type": "integer"
+                    },
+                    "para": {
+                      "type": "integer"
+                    },
+                    "diabetesMellitus": {
+                      "type": "boolean"
+                    },
+                    "hiv": {
+                      "type": "string"
+                    },
+                    "bloodGroupRh": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "ANC record created successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/anc/{id}": {
+        "get": {
+          "summary": "Get ANC record by ID",
+          "tags": [
+            "ANC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "ANC record details"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update ANC record",
+          "tags": [
+            "ANC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lmp": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "hiv": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "ANC record updated successfully"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete ANC record",
+          "tags": [
+            "ANC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "ANC record deleted successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/anc/patient/{patientId}": {
+        "get": {
+          "summary": "Get all ANC records for a patient",
+          "tags": [
+            "ANC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "patientId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of ANC records"
+            }
+          }
+        }
+      },
+      "/api/v1/auth/register": {
+        "post": {
+          "summary": "Register a new user",
+          "tags": [
+            "Authentication"
+          ],
+          "security": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "phone",
+                    "password",
+                    "fullName"
+                  ],
+                  "properties": {
+                    "phone": {
+                      "type": "string",
+                      "example": "+251911234567"
+                    },
+                    "password": {
+                      "type": "string",
+                      "minLength": 4,
+                      "example": "password123"
+                    },
+                    "fullName": {
+                      "type": "string",
+                      "minLength": 4,
+                      "example": "John Doe"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "User registered successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "user": {
+                        "$ref": "#/components/schemas/User"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "User already exists or validation error"
+            }
+          }
+        }
+      },
+      "/api/v1/auth/login": {
+        "post": {
+          "summary": "Login user",
+          "tags": [
+            "Authentication"
+          ],
+          "security": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "phone",
+                    "password"
+                  ],
+                  "properties": {
+                    "phone": {
+                      "type": "string",
+                      "example": "+251911234567"
+                    },
+                    "password": {
+                      "type": "string",
+                      "example": "password123"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Login successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "user": {
+                        "$ref": "#/components/schemas/User"
+                      },
+                      "accessToken": {
+                        "type": "string",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      },
+                      "refreshToken": {
+                        "type": "string",
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Invalid credentials"
+            }
+          }
+        }
+      },
+      "/api/v1/auth/refresh": {
+        "post": {
+          "summary": "Refresh access token",
+          "tags": [
+            "Authentication"
+          ],
+          "security": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "refreshToken"
+                  ],
+                  "properties": {
+                    "refreshToken": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Token refreshed successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "accessToken": {
+                        "type": "string"
+                      },
+                      "refreshToken": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "401": {
+              "description": "Invalid refresh token"
+            }
+          }
+        }
+      },
+      "/api/v1/auth/logout": {
+        "post": {
+          "summary": "Logout (revoke refresh token)",
+          "tags": [
+            "Authentication"
+          ],
+          "security": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "refreshToken"
+                  ],
+                  "properties": {
+                    "refreshToken": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Logged out successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/auth/change-password": {
+        "post": {
+          "summary": "Change password (authenticated user)",
+          "tags": [
+            "Authentication"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "currentPassword",
+                    "newPassword"
+                  ],
+                  "properties": {
+                    "currentPassword": {
+                      "type": "string",
+                      "example": "oldpassword123"
+                    },
+                    "newPassword": {
+                      "type": "string",
+                      "minLength": 4,
+                      "example": "newpassword123"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Password changed successfully"
+            },
+            "400": {
+              "description": "Current password is incorrect"
+            },
+            "401": {
+              "description": "Unauthorized"
+            }
+          }
+        }
+      },
+      "/api/v1/auth/first-time-change-password": {
+        "post": {
+          "summary": "Change password for first time login",
+          "tags": [
+            "Authentication"
+          ],
+          "security": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "phone",
+                    "initialPassword",
+                    "newPassword"
+                  ],
+                  "properties": {
+                    "phone": {
+                      "type": "string",
+                      "example": "+251911234567"
+                    },
+                    "initialPassword": {
+                      "type": "string",
+                      "example": "initialpassword"
+                    },
+                    "newPassword": {
+                      "type": "string",
+                      "minLength": 4,
+                      "example": "newpassword123"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Password changed successfully"
+            },
+            "401": {
+              "description": "Invalid credentials"
+            }
+          }
+        }
+      },
+      "/api/v1/auth/forgot-password": {
+        "post": {
+          "summary": "Request password reset OTP",
+          "tags": [
+            "Authentication"
+          ],
+          "security": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "phone"
+                  ],
+                  "properties": {
+                    "phone": {
+                      "type": "string",
+                      "example": "+251911234567"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "OTP sent successfully (if user exists)",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "message": {
+                        "type": "string",
+                        "example": "If a user with this phone exists, an OTP code has been sent."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/v1/auth/reset-password": {
+        "post": {
+          "summary": "Reset password with OTP",
+          "tags": [
+            "Authentication"
+          ],
+          "security": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "phone",
+                    "otpCode",
+                    "newPassword"
+                  ],
+                  "properties": {
+                    "phone": {
+                      "type": "string",
+                      "example": "+251911234567"
+                    },
+                    "otpCode": {
+                      "type": "string",
+                      "pattern": "^[0-9]{6}$",
+                      "example": "123456"
+                    },
+                    "newPassword": {
+                      "type": "string",
+                      "minLength": 4,
+                      "example": "newpassword123"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Password reset successfully"
+            },
+            "400": {
+              "description": "Invalid or expired OTP code"
+            }
+          }
+        }
+      },
+      "/api/v1/delivery": {
+        "post": {
+          "summary": "Create delivery record (Delivery Summary Recording – full UI form)",
+          "description": "Accepts the full Delivery Summary Recording form – consent, delivery details, referral, AMTSL, placenta, laceration, management conditions, delivery assistance, HIV section, and newborns array. recordedById is set from auth token.",
+          "tags": [
+            "Delivery"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "patientId"
+                  ],
+                  "properties": {
+                    "patientId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "pregnancyId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "clientConsentSignature": {
+                      "type": "string",
+                      "description": "Consent Form Delivery Client – Signature"
+                    },
+                    "healthProfessionalConsentSignature": {
+                      "type": "string",
+                      "description": "Consent Form Health Professional – Signature"
+                    },
+                    "deliveryDate": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "deliveryTime": {
+                      "type": "string"
+                    },
+                    "referral": {
+                      "type": "boolean",
+                      "description": "Referral Yes/No"
+                    },
+                    "referralInfo": {
+                      "type": "string",
+                      "description": "Optional referral details"
+                    },
+                    "amtsl": {
+                      "type": "string",
+                      "enum": [
+                        "Ergometrine",
+                        "Oxytocin",
+                        "Misoprostol"
+                      ]
+                    },
+                    "placenta": {
+                      "type": "string",
+                      "enum": [
+                        "Completed",
+                        "Incomplete",
+                        "CCT",
+                        "MRP",
+                        "NRP"
+                      ]
+                    },
+                    "laceration": {
+                      "type": "string",
+                      "enum": [
+                        "1st Degree",
+                        "2nd Degree",
+                        "3rd Degree"
+                      ]
+                    },
+                    "obstetricCxManaged": {
+                      "type": "boolean"
+                    },
+                    "aphManaged": {
+                      "type": "boolean"
+                    },
+                    "rupturedUx": {
+                      "type": "boolean"
+                    },
+                    "eclampsiaManaged": {
+                      "type": "boolean"
+                    },
+                    "pphManaged": {
+                      "type": "boolean"
+                    },
+                    "promSepsisManaged": {
+                      "type": "boolean"
+                    },
+                    "obstPrologLaborManaged": {
+                      "type": "boolean"
+                    },
+                    "deliveryAssistanceMeasures": {
+                      "type": "string"
+                    },
+                    "deliveryAssistanceMore": {
+                      "type": "string"
+                    },
+                    "hivCounsTestingOffered": {
+                      "type": "string"
+                    },
+                    "hivTestingAccepted": {
+                      "type": "string"
+                    },
+                    "hivTestResult": {
+                      "type": "string"
+                    },
+                    "arvpxForMothers": {
+                      "type": "string"
+                    },
+                    "arvpxForNb": {
+                      "type": "string"
+                    },
+                    "feedingOptionEbf": {
+                      "type": "string"
+                    },
+                    "rf": {
+                      "type": "string"
+                    },
+                    "newborns": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "quantity": {
+                            "type": "string",
+                            "enum": [
+                              "Single",
+                              "Multiple"
+                            ]
+                          },
+                          "sex": {
+                            "type": "string",
+                            "enum": [
+                              "Male",
+                              "Female"
+                            ]
+                          },
+                          "termStatus": {
+                            "type": "string",
+                            "enum": [
+                              "Term",
+                              "Preterm"
+                            ]
+                          },
+                          "alive": {
+                            "type": "boolean"
+                          },
+                          "apgarScore": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 10
+                          },
+                          "sb": {
+                            "type": "string",
+                            "enum": [
+                              "Mac",
+                              "Fresh"
+                            ]
+                          },
+                          "birthWeightGm": {
+                            "type": "number"
+                          },
+                          "lengthCm": {
+                            "type": "number"
+                          },
+                          "vitK": {
+                            "type": "boolean"
+                          },
+                          "ttc": {
+                            "type": "boolean"
+                          },
+                          "babyMotherBonding": {
+                            "type": "boolean"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Delivery record created successfully (Delivery Overview registered)"
+            }
+          }
+        }
+      },
+      "/api/v1/delivery/{id}": {
+        "get": {
+          "summary": "Get delivery by ID",
+          "tags": [
+            "Delivery"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Delivery details"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update delivery record",
+          "tags": [
+            "Delivery"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Delivery updated successfully"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete delivery record",
+          "tags": [
+            "Delivery"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Delivery deleted successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/delivery/patient/{patientId}": {
+        "get": {
+          "summary": "Get all deliveries for a patient",
+          "tags": [
+            "Delivery"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "patientId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of deliveries"
+            }
+          }
+        }
+      },
+      "/api/v1/delivery/pregnancy/{pregnancyId}": {
+        "get": {
+          "summary": "Get all deliveries for a pregnancy",
+          "tags": [
+            "Delivery"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "pregnancyId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of deliveries"
+            }
+          }
+        }
+      },
+      "/api/v1/gbv-screening": {
+        "post": {
+          "summary": "Create GBV screening (Register Survivor – full UI form)",
+          "description": "Accepts the full GBV Screening and Registration form – consent, comprehensive history, vital signs, physical exam, working diagnosis, laboratory, test results, ultrasound request, treatment plan. recordedById set from auth token. Basic info (name, age, location, etc.) use POST /patient first; referral use GBV report or screening context.",
+          "tags": [
+            "GBV Screening"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "patientId"
+                  ],
+                  "properties": {
+                    "patientId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "gbvReportId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "survivorConsentSignature": {
+                      "type": "string"
+                    },
+                    "caseWorkerConsentSignature": {
+                      "type": "string"
+                    },
+                    "gbvHistory": {
+                      "type": "string"
+                    },
+                    "temperature": {
+                      "type": "string"
+                    },
+                    "weightKg": {
+                      "type": "number"
+                    },
+                    "heightCm": {
+                      "type": "number"
+                    },
+                    "bmiIndex": {
+                      "type": "number"
+                    },
+                    "bloodPressure": {
+                      "type": "string"
+                    },
+                    "pulse": {
+                      "type": "string"
+                    },
+                    "respiratoryRate": {
+                      "type": "string"
+                    },
+                    "oxygenSaturation": {
+                      "type": "string"
+                    },
+                    "physicalExamination": {
+                      "type": "string"
+                    },
+                    "workingDiagnosis": {
+                      "type": "string"
+                    },
+                    "laboratoryResults": {
+                      "type": "string"
+                    },
+                    "pregnancyTestingResults": {
+                      "type": "string"
+                    },
+                    "hivTestingResults": {
+                      "type": "string"
+                    },
+                    "stiTestingResults": {
+                      "type": "string"
+                    },
+                    "postExposureProphylaxisTreatment": {
+                      "type": "string"
+                    },
+                    "emergencyContraceptiveProvision": {
+                      "type": "string"
+                    },
+                    "typeOfUltrasound": {
+                      "type": "string"
+                    },
+                    "ultrasoundMore": {
+                      "type": "string"
+                    },
+                    "smartUltrasoundRecommendation": {
+                      "type": "string"
+                    },
+                    "treatmentPlan": {
+                      "type": "string"
+                    },
+                    "treatmentRx": {
+                      "type": "string"
+                    },
+                    "continuationSheet": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "GBV case registered successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/gbv-screening/{id}": {
+        "get": {
+          "summary": "Get GBV screening by ID",
+          "tags": [
+            "GBV Screening"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "GBV screening details"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update GBV screening",
+          "tags": [
+            "GBV Screening"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "GBV screening updated successfully"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete GBV screening",
+          "tags": [
+            "GBV Screening"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "GBV screening deleted successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/gbv-screening/patient/{patientId}": {
+        "get": {
+          "summary": "Get all GBV screenings for a patient",
+          "tags": [
+            "GBV Screening"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "patientId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of GBV screenings"
+            }
+          }
+        }
+      },
+      "/api/v1/gbv-screening/gbv-report/{gbvReportId}": {
+        "get": {
+          "summary": "Get all GBV screenings for a GBV report",
+          "tags": [
+            "GBV Screening"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "gbvReportId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of GBV screenings"
+            }
+          }
+        }
+      },
+      "/api/v1/gbv": {
+        "post": {
+          "summary": "Create GBV report (with attachment upload)",
+          "tags": [
+            "GBV Reports"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "patientId"
+                  ],
+                  "properties": {
+                    "patientId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "incidentDate": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "referral": {
+                      "type": "boolean",
+                      "description": "Referral Yes/No (Basic Information)"
+                    },
+                    "referralInfo": {
+                      "type": "string",
+                      "description": "Insert Referral Info (optional)"
+                    },
+                    "attachment": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "highRisk": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "GBV report created successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/gbv/patient/{patientId}": {
+        "get": {
+          "summary": "Get all GBV reports for a patient",
+          "tags": [
+            "GBV Reports"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "patientId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of GBV reports"
+            }
+          }
+        }
+      },
+      "/api/v1/gbv/{id}": {
+        "get": {
+          "summary": "Get GBV report by ID",
+          "tags": [
+            "GBV Reports"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "GBV report details"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update GBV report",
+          "tags": [
+            "GBV Reports"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "GBV report updated successfully"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete GBV report",
+          "tags": [
+            "GBV Reports"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "GBV report deleted successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/messages/conversations": {
+        "get": {
+          "summary": "List my conversations (inbox/outbox, optional search)",
+          "tags": [
+            "Messages"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "query",
+              "name": "folder",
+              "schema": {
+                "type": "string",
+                "enum": [
+                  "inbox",
+                  "outbox"
+                ]
+              }
+            },
+            {
+              "in": "query",
+              "name": "search",
+              "schema": {
+                "type": "string"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of conversations with last message and unread count"
+            }
+          }
+        },
+        "post": {
+          "summary": "Get or create a conversation with another user",
+          "tags": [
+            "Messages"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "otherUserId"
+                  ],
+                  "properties": {
+                    "otherUserId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Conversation (existing or newly created)"
+            }
+          }
+        }
+      },
+      "/api/v1/messages/conversations/{id}": {
+        "get": {
+          "summary": "Get one conversation",
+          "tags": [
+            "Messages"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Conversation details"
+            }
+          }
+        }
+      },
+      "/api/v1/messages/conversations/{id}/messages": {
+        "get": {
+          "summary": "List messages in a conversation (paginated)",
+          "tags": [
+            "Messages"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            },
+            {
+              "in": "query",
+              "name": "limit",
+              "schema": {
+                "type": "integer",
+                "default": 50
+              }
+            },
+            {
+              "in": "query",
+              "name": "offset",
+              "schema": {
+                "type": "integer",
+                "default": 0
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Messages in chronological order"
+            }
+          }
+        },
+        "post": {
+          "summary": "Send a message in a conversation",
+          "tags": [
+            "Messages"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "body"
+                  ],
+                  "properties": {
+                    "body": {
+                      "type": "string"
+                    },
+                    "attachmentUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Message created"
+            }
+          }
+        }
+      },
+      "/api/v1/messages/conversations/{id}/read": {
+        "patch": {
+          "summary": "Mark all messages in conversation as read",
+          "tags": [
+            "Messages"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK"
+            }
+          }
+        }
+      },
+      "/api/v1/messages/messages/{id}/read": {
+        "patch": {
+          "summary": "Mark a message as read",
+          "tags": [
+            "Messages"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "OK"
+            }
+          }
+        }
+      },
+      "/api/v1/patient": {
+        "get": {
+          "summary": "Get all patients",
+          "tags": [
+            "Patients"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of patients",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {
+                        "type": "boolean"
+                      },
+                      "patients": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/Patient"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "summary": "Create a new patient (basic info only)",
+          "description": "Creates only a patient record. For full Register Client (patient + ANC), use POST /register-client.",
+          "tags": [
+            "Patients"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "fullName"
+                  ],
+                  "properties": {
+                    "fullName": {
+                      "type": "string",
+                      "minLength": 3
+                    },
+                    "cardNo": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "age": {
+                      "type": "integer"
+                    },
+                    "address": {
+                      "type": "string"
+                    },
+                    "subCity": {
+                      "type": "string"
+                    },
+                    "woreda": {
+                      "type": "string"
+                    },
+                    "kebele": {
+                      "type": "string"
+                    },
+                    "houseNo": {
+                      "type": "string"
+                    },
+                    "facility": {
+                      "type": "string"
+                    },
+                    "maritalStatus": {
+                      "type": "string"
+                    },
+                    "idNumber": {
+                      "type": "string"
+                    },
+                    "emergencyContact": {
+                      "type": "string"
+                    },
+                    "emergencyPhone": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Patient created successfully"
+            },
+            "400": {
+              "description": "Validation error"
+            }
+          }
+        }
+      },
+      "/api/v1/patient/{id}": {
+        "get": {
+          "summary": "Get patient by ID",
+          "tags": [
+            "Patients"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Patient details"
+            },
+            "404": {
+              "description": "Patient not found"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update patient",
+          "tags": [
+            "Patients"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fullName": {
+                      "type": "string",
+                      "minLength": 3
+                    },
+                    "cardNo": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "age": {
+                      "type": "integer"
+                    },
+                    "address": {
+                      "type": "string"
+                    },
+                    "subCity": {
+                      "type": "string"
+                    },
+                    "woreda": {
+                      "type": "string"
+                    },
+                    "kebele": {
+                      "type": "string"
+                    },
+                    "houseNo": {
+                      "type": "string"
+                    },
+                    "facility": {
+                      "type": "string"
+                    },
+                    "maritalStatus": {
+                      "type": "string"
+                    },
+                    "idNumber": {
+                      "type": "string"
+                    },
+                    "emergencyContact": {
+                      "type": "string"
+                    },
+                    "emergencyPhone": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Patient updated successfully"
+            },
+            "404": {
+              "description": "Patient not found"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete patient",
+          "tags": [
+            "Patients"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Patient deleted successfully"
+            },
+            "404": {
+              "description": "Patient not found"
+            }
+          }
+        }
+      },
+      "/api/v1/patient/register-client": {
+        "post": {
+          "summary": "Register client (full ANC form – all UI steps in one request)",
+          "description": "Accepts the complete Register Client form matching the ANC Medical Recording UI. Creates Patient + ANC record in one transaction. Only fullName is required; all other fields optional.",
+          "tags": [
+            "Patients"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "fullName"
+                  ],
+                  "properties": {
+                    "fullName": {
+                      "type": "string",
+                      "minLength": 3
+                    },
+                    "cardNo": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "email": {
+                      "type": "string"
+                    },
+                    "age": {
+                      "type": "integer"
+                    },
+                    "address": {
+                      "type": "string"
+                    },
+                    "subCity": {
+                      "type": "string"
+                    },
+                    "woreda": {
+                      "type": "string"
+                    },
+                    "kebele": {
+                      "type": "string"
+                    },
+                    "houseNo": {
+                      "type": "string"
+                    },
+                    "facility": {
+                      "type": "string"
+                    },
+                    "maritalStatus": {
+                      "type": "string"
+                    },
+                    "idNumber": {
+                      "type": "string"
+                    },
+                    "emergencyContact": {
+                      "type": "string"
+                    },
+                    "emergencyPhone": {
+                      "type": "string"
+                    },
+                    "clientConsentSignature": {
+                      "type": "string"
+                    },
+                    "healthProfessionalConsentSignature": {
+                      "type": "string"
+                    },
+                    "lmp": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "edd": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "gravida": {
+                      "type": "integer"
+                    },
+                    "para": {
+                      "type": "integer"
+                    },
+                    "abortion": {
+                      "type": "integer"
+                    },
+                    "ectopicPreg": {
+                      "type": "integer"
+                    },
+                    "childrenAlive": {
+                      "type": "integer"
+                    },
+                    "pastObstetricHistory": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "year": {
+                            "type": "string"
+                          },
+                          "ga": {
+                            "type": "string"
+                          },
+                          "modeOfDelivery": {
+                            "type": "string"
+                          },
+                          "sex": {
+                            "type": "string"
+                          },
+                          "birthWeightKg": {
+                            "type": "number"
+                          }
+                        }
+                      }
+                    },
+                    "diabetesMellitus": {
+                      "type": "boolean"
+                    },
+                    "diabetesMellitusMoreInfo": {
+                      "type": "string"
+                    },
+                    "cardiacDisease": {
+                      "type": "boolean"
+                    },
+                    "cardiacDiseaseMoreInfo": {
+                      "type": "string"
+                    },
+                    "chronicHypertension": {
+                      "type": "boolean"
+                    },
+                    "chronicHypertensionMoreInfo": {
+                      "type": "string"
+                    },
+                    "otherMedicalCondition": {
+                      "type": "boolean"
+                    },
+                    "otherMedicalConditionText": {
+                      "type": "string"
+                    },
+                    "vdrl": {
+                      "type": "string"
+                    },
+                    "hiv": {
+                      "type": "string"
+                    },
+                    "hbsAg": {
+                      "type": "string"
+                    },
+                    "rbs": {
+                      "type": "string"
+                    },
+                    "fbs": {
+                      "type": "string"
+                    },
+                    "bloodGroupRh": {
+                      "type": "string"
+                    },
+                    "ua": {
+                      "type": "string"
+                    },
+                    "td": {
+                      "type": "string"
+                    },
+                    "generalExamGeneral": {
+                      "type": "string"
+                    },
+                    "generalExamPallor": {
+                      "type": "string"
+                    },
+                    "jaundice": {
+                      "type": "boolean"
+                    },
+                    "chestAbnormality": {
+                      "type": "boolean"
+                    },
+                    "chestAbnormalityMoreInfo": {
+                      "type": "string"
+                    },
+                    "heartAbnormality": {
+                      "type": "boolean"
+                    },
+                    "heartAbnormalityMoreInfo": {
+                      "type": "string"
+                    },
+                    "vulvarUlcer": {
+                      "type": "boolean"
+                    },
+                    "vaginalDischarge": {
+                      "type": "boolean"
+                    },
+                    "pelvicMass": {
+                      "type": "boolean"
+                    },
+                    "cervicalLesion": {
+                      "type": "boolean"
+                    },
+                    "uterineSizeWks": {
+                      "type": "integer"
+                    },
+                    "dangerSignsAdvised": {
+                      "type": "boolean"
+                    },
+                    "birthPreparednessAdvised": {
+                      "type": "boolean"
+                    },
+                    "motherHivTestAccepted": {
+                      "type": "boolean"
+                    },
+                    "hivTestResult": {
+                      "type": "string"
+                    },
+                    "hivTestResultReceived": {
+                      "type": "boolean"
+                    },
+                    "counseledInfantFeeding": {
+                      "type": "boolean"
+                    },
+                    "referredForCare": {
+                      "type": "boolean"
+                    },
+                    "partnerHivTestResult": {
+                      "type": "string"
+                    },
+                    "gaLmp": {
+                      "type": "string"
+                    },
+                    "complaints": {
+                      "type": "string"
+                    },
+                    "bloodPressure": {
+                      "type": "string"
+                    },
+                    "weightKg": {
+                      "type": "number"
+                    },
+                    "pallor": {
+                      "type": "string"
+                    },
+                    "hemoglobin": {
+                      "type": "string"
+                    },
+                    "uterineHeightWks": {
+                      "type": "integer"
+                    },
+                    "presentation": {
+                      "type": "string"
+                    },
+                    "descent": {
+                      "type": "string"
+                    },
+                    "fetalHeartRate": {
+                      "type": "string"
+                    },
+                    "remarks": {
+                      "type": "string"
+                    },
+                    "nextFollowUpDate": {
+                      "type": "string",
+                      "format": "date"
+                    },
+                    "dangerSignsIdentified": {
+                      "type": "string"
+                    },
+                    "actionAdviceCounselling": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Client and ANC case registered successfully"
+            },
+            "400": {
+              "description": "Validation error or phone already exists"
+            }
+          }
+        }
+      },
+      "/api/v1/pnc": {
+        "post": {
+          "summary": "Create PNC visit (PNC Medical Recording – full UI form)",
+          "description": "Accepts the full PNC Medical Recording form – consent, postpartum vitals, uterine assessment, anemia/vaginal/breast/vitamin A/counseling, baby health, HIV, referrals, remark, action. recordedById set from auth token.",
+          "tags": [
+            "PNC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "patientId"
+                  ],
+                  "properties": {
+                    "patientId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "deliveryId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "clientConsentSignature": {
+                      "type": "string",
+                      "description": "Consent Form PNC Client – Signature"
+                    },
+                    "healthProfessionalConsentSignature": {
+                      "type": "string",
+                      "description": "Consent Form Health Professional – Signature"
+                    },
+                    "visitDate": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "bloodPressure": {
+                      "type": "string",
+                      "description": "BP"
+                    },
+                    "tpr": {
+                      "type": "string",
+                      "description": "Temperature, Pulse, Respiration"
+                    },
+                    "temperature": {
+                      "type": "number"
+                    },
+                    "uterusContracted": {
+                      "type": "string",
+                      "description": "Uterus Contracted/Look for PPH"
+                    },
+                    "dribblingLeakingUrine": {
+                      "type": "string",
+                      "description": "Dribbling, Leaking Urine"
+                    },
+                    "anemia": {
+                      "type": "string"
+                    },
+                    "vaginalDischarge": {
+                      "type": "string",
+                      "description": "Vaginal discharge (after 4wks Delivery)"
+                    },
+                    "breast": {
+                      "type": "string"
+                    },
+                    "vitaminA": {
+                      "type": "string"
+                    },
+                    "counselingDangerSigns": {
+                      "type": "string",
+                      "description": "Counseling danger signs EPI, Use of ITN given"
+                    },
+                    "babyBreathing": {
+                      "type": "string"
+                    },
+                    "babyBreastFeeding": {
+                      "type": "string"
+                    },
+                    "babyWeightGm": {
+                      "type": "number",
+                      "description": "Baby Wt.(gm.)"
+                    },
+                    "immunization": {
+                      "type": "string"
+                    },
+                    "hivTested": {
+                      "type": "string"
+                    },
+                    "hivTestResult": {
+                      "type": "string",
+                      "description": "R/NR"
+                    },
+                    "arvPxForMother": {
+                      "type": "string",
+                      "description": "ARV Px for Mother"
+                    },
+                    "arvPxForNewborn": {
+                      "type": "string",
+                      "description": "ARV Px for Newborn"
+                    },
+                    "feedingOption": {
+                      "type": "string",
+                      "description": "EBF/RF"
+                    },
+                    "motherReferredToCare": {
+                      "type": "string",
+                      "description": "Mother Referred to Care & Support"
+                    },
+                    "newbornReferredToCare": {
+                      "type": "string",
+                      "description": "Newborn referred to Chronic HIV infant Care"
+                    },
+                    "fpCounseledAndProvided": {
+                      "type": "string",
+                      "description": "Postpartum FP Counseled & Provided"
+                    },
+                    "remark": {
+                      "type": "string"
+                    },
+                    "actionTaken": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "PNC case registered successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/pnc/{id}": {
+        "get": {
+          "summary": "Get PNC visit by ID",
+          "tags": [
+            "PNC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "PNC visit details"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update PNC visit",
+          "tags": [
+            "PNC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "PNC visit updated successfully"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete PNC visit",
+          "tags": [
+            "PNC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "PNC visit deleted successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/pnc/patient/{patientId}": {
+        "get": {
+          "summary": "Get all PNC visits for a patient",
+          "tags": [
+            "PNC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "patientId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of PNC visits"
+            }
+          }
+        }
+      },
+      "/api/v1/pnc/delivery/{deliveryId}": {
+        "get": {
+          "summary": "Get all PNC visits for a delivery",
+          "tags": [
+            "PNC"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "deliveryId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of PNC visits"
+            }
+          }
+        }
+      },
+      "/api/v1/profile/me": {
+        "get": {
+          "summary": "Get current user profile",
+          "description": "Returns profile for the authenticated user (name, phone, displayId, profileImageUrl, preferredLanguage, roles). Used for Profile screen.",
+          "tags": [
+            "Profile"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Profile data"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update current user profile",
+          "description": "Update fullName, displayId, profileImageUrl, preferredLanguage (Settings / edit profile).",
+          "tags": [
+            "Profile"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fullName": {
+                      "type": "string"
+                    },
+                    "displayId": {
+                      "type": "string"
+                    },
+                    "profileImageUrl": {
+                      "type": "string",
+                      "format": "uri"
+                    },
+                    "preferredLanguage": {
+                      "type": "string",
+                      "enum": [
+                        "EN",
+                        "SO"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Updated profile"
+            }
+          }
+        }
+      },
+      "/api/v1/profile/sync-status": {
+        "get": {
+          "summary": "Get last sync status (Synchronization)",
+          "tags": [
+            "Profile"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Last sync timestamp and stats, or null if never synced"
+            }
+          }
+        }
+      },
+      "/api/v1/profile/help": {
+        "get": {
+          "summary": "Help and Support (contact / FAQ links)",
+          "tags": [
+            "Profile"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Support email, phone, FAQ URL (from env or defaults)"
+            }
+          }
+        }
+      },
+      "/api/v1/role": {
+        "get": {
+          "summary": "Get all roles",
+          "tags": [
+            "Roles"
+          ],
+          "security": [],
+          "responses": {
+            "200": {
+              "description": "List of roles"
+            }
+          }
+        }
+      },
+      "/api/v1/role/assign": {
+        "post": {
+          "summary": "Assign role to user",
+          "tags": [
+            "Roles"
+          ],
+          "security": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "userId",
+                    "roleId"
+                  ],
+                  "properties": {
+                    "userId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "roleId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Role assigned successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/role/remove": {
+        "post": {
+          "summary": "Remove role from user",
+          "tags": [
+            "Roles"
+          ],
+          "security": [],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "userId",
+                    "roleId"
+                  ],
+                  "properties": {
+                    "userId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "roleId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Role removed successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/srh": {
+        "post": {
+          "summary": "Create SRH registration (SRH Medical Registration – full UI form)",
+          "description": "Accepts the full SRH Medical Registration form – consent, history (SRH service type + history), vital signs, physical examination, working diagnosis, laboratory, ultrasound request, treatment plan. recordedById set from auth token. Basic info (name, age, location, etc.) use POST /patient first.",
+          "tags": [
+            "SRH"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "patientId"
+                  ],
+                  "properties": {
+                    "patientId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "clientConsentSignature": {
+                      "type": "string"
+                    },
+                    "healthProfessionalConsentSignature": {
+                      "type": "string"
+                    },
+                    "srhServiceType": {
+                      "type": "string",
+                      "description": "Family Planning, Routine Care, STI/HIV, Others"
+                    },
+                    "history": {
+                      "type": "string"
+                    },
+                    "temperature": {
+                      "type": "string"
+                    },
+                    "weightKg": {
+                      "type": "number"
+                    },
+                    "heightCm": {
+                      "type": "number"
+                    },
+                    "bmiIndex": {
+                      "type": "number"
+                    },
+                    "bloodPressure": {
+                      "type": "string"
+                    },
+                    "pulse": {
+                      "type": "string"
+                    },
+                    "respiratoryRate": {
+                      "type": "string"
+                    },
+                    "oxygenSaturation": {
+                      "type": "string"
+                    },
+                    "physicalExamination": {
+                      "type": "string"
+                    },
+                    "workingDiagnosis": {
+                      "type": "string"
+                    },
+                    "laboratoryResults": {
+                      "type": "string"
+                    },
+                    "typeOfUltrasound": {
+                      "type": "string"
+                    },
+                    "ultrasoundMore": {
+                      "type": "string"
+                    },
+                    "smartUltrasoundRecommendation": {
+                      "type": "string"
+                    },
+                    "treatmentPlan": {
+                      "type": "string"
+                    },
+                    "treatmentRx": {
+                      "type": "string"
+                    },
+                    "continuationSheet": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "SRH case registered successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/srh/{id}": {
+        "get": {
+          "summary": "Get SRH registration by ID",
+          "tags": [
+            "SRH"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "SRH registration details"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update SRH registration",
+          "tags": [
+            "SRH"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "SRH registration updated successfully"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete SRH registration",
+          "tags": [
+            "SRH"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "SRH registration deleted successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/srh/patient/{patientId}": {
+        "get": {
+          "summary": "Get all SRH registrations for a patient",
+          "tags": [
+            "SRH"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "patientId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of SRH registrations"
+            }
+          }
+        }
+      },
+      "/api/v1/ultrasound": {
+        "post": {
+          "summary": "Create ultrasound scan (with image upload)",
+          "tags": [
+            "Ultrasound"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "patientId",
+                    "image"
+                  ],
+                  "properties": {
+                    "patientId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "visitId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "image": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "gestationalAge": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Ultrasound scan created successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/ultrasound/patient/{patientId}": {
+        "get": {
+          "summary": "Get all ultrasound scans for a patient",
+          "tags": [
+            "Ultrasound"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "patientId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of ultrasound scans"
+            }
+          }
+        }
+      },
+      "/api/v1/ultrasound/{id}": {
+        "get": {
+          "summary": "Get ultrasound scan by ID",
+          "tags": [
+            "Ultrasound"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Ultrasound scan details"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update ultrasound scan",
+          "tags": [
+            "Ultrasound"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Ultrasound scan updated successfully"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete ultrasound scan",
+          "tags": [
+            "Ultrasound"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Ultrasound scan deleted successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/visit": {
+        "post": {
+          "summary": "Create a visit record",
+          "tags": [
+            "Visits"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "patientId",
+                    "visitDate"
+                  ],
+                  "properties": {
+                    "patientId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "visitDate": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "bloodPressure": {
+                      "type": "string"
+                    },
+                    "temperature": {
+                      "type": "number"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "responses": {
+            "201": {
+              "description": "Visit created successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/visit/{id}": {
+        "get": {
+          "summary": "Get visit by ID",
+          "tags": [
+            "Visits"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Visit details"
+            }
+          }
+        },
+        "patch": {
+          "summary": "Update visit",
+          "tags": [
+            "Visits"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Visit updated successfully"
+            }
+          }
+        },
+        "delete": {
+          "summary": "Delete visit",
+          "tags": [
+            "Visits"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Visit deleted successfully"
+            }
+          }
+        }
+      },
+      "/api/v1/visit/patient/{patientId}": {
+        "get": {
+          "summary": "Get all visits for a patient",
+          "tags": [
+            "Visits"
+          ],
+          "security": [
+            {
+              "bearerAuth": []
+            }
+          ],
+          "parameters": [
+            {
+              "in": "path",
+              "name": "patientId",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "List of visits"
+            }
+          }
+        }
+      }
+    },
+    "tags": [
+      {
+        "name": "Authentication",
+        "description": "User authentication and authorization endpoints"
+      },
+      {
+        "name": "Patients",
+        "description": "Patient management endpoints"
+      },
+      {
+        "name": "ANC",
+        "description": "Antenatal Care (ANC) record management"
+      },
+      {
+        "name": "Delivery",
+        "description": "Delivery and newborn record management"
+      },
+      {
+        "name": "PNC",
+        "description": "Postnatal Care (PNC) visit management"
+      },
+      {
+        "name": "GBV Screening",
+        "description": "Gender-Based Violence screening and registration"
+      },
+      {
+        "name": "SRH",
+        "description": "Sexual and Reproductive Health registration"
+      },
+      {
+        "name": "Visits",
+        "description": "General visit management"
+      },
+      {
+        "name": "Ultrasound",
+        "description": "Ultrasound scan management"
+      },
+      {
+        "name": "GBV Reports",
+        "description": "GBV report management"
+      },
+      {
+        "name": "Referrals",
+        "description": "Patient referral management"
+      },
+      {
+        "name": "Roles",
+        "description": "Role management"
+      },
+      {
+        "name": "Pregnancy",
+        "description": "Pregnancy management"
+      }
+    ]
+  },
+  "customOptions": {}
+};

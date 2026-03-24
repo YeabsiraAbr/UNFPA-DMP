@@ -1,25 +1,47 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { StatsCard } from '@/components/dashboard/StatsCard'
 import { QuickActions } from '@/components/dashboard/QuickActions'
-import { VisitsChart, RiskDistributionChart, TeleconsultMetrics } from '@/components/dashboard/Charts'
 import { RecentActivity } from '@/components/dashboard/RecentActivity'
 import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointments'
 import { HighRiskPatients } from '@/components/dashboard/HighRiskPatients'
-import { mockClinicStats, mockAnalyticsData } from '@/lib/mock-data'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { analyticsService, cached } from '@/services'
+import type { DashboardStats } from '@/services/types'
 import {
   Users,
   Baby,
   AlertTriangle,
   Calendar,
-  MessageSquare,
-  RefreshCcw,
-  Shield,
   Activity,
+  Shield,
+  Stethoscope,
+  ClipboardList,
 } from 'lucide-react'
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    cached('dashboard-stats', () => analyticsService.getDashboard())
+      .then(res => {
+        if (res.success && res.data) setStats(res.data)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Dashboard" subtitle="Digital Maternity Package - Nogob Zone, Ethiopia">
+        <LoadingState message="Loading dashboard..." />
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout
       title="Dashboard"
@@ -29,30 +51,28 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatsCard
           title="Total Patients"
-          value={mockClinicStats.totalPatients.toLocaleString()}
+          value={stats?.totalPatients?.toLocaleString() ?? '0'}
           subtitle="Registered mothers"
           icon={Users}
-          trend={{ value: 4.5, isPositive: true }}
           color="brand"
         />
         <StatsCard
           title="Active Pregnancies"
-          value={mockClinicStats.activePregnancies}
+          value={stats?.activePregnancies ?? 0}
           subtitle="Currently being monitored"
           icon={Baby}
-          trend={{ value: 2.8, isPositive: true }}
           color="purple"
         />
         <StatsCard
           title="High Risk"
-          value={mockClinicStats.highRiskPatients}
+          value={stats?.highRiskCount ?? 0}
           subtitle="Patients requiring attention"
           icon={AlertTriangle}
           color="red"
         />
         <StatsCard
           title="Today's Appointments"
-          value={mockClinicStats.appointmentsToday}
+          value={stats?.appointmentsToday ?? 0}
           subtitle="Scheduled visits"
           icon={Calendar}
           color="emerald"
@@ -62,30 +82,55 @@ export default function DashboardPage() {
       {/* Secondary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <StatsCard
-          title="Visits This Month"
-          value={mockClinicStats.visitsThisMonth}
+          title="Total Visits"
+          value={stats?.totalVisits ?? 0}
+          subtitle="All recorded visits"
           icon={Activity}
-          trend={{ value: 8.2, isPositive: true }}
           color="brand"
         />
         <StatsCard
-          title="Teleconsults"
-          value={mockClinicStats.teleconsultsThisMonth}
-          icon={MessageSquare}
+          title="Total Deliveries"
+          value={stats?.totalDeliveries ?? 0}
+          subtitle="Delivery records"
+          icon={Stethoscope}
           color="purple"
         />
         <StatsCard
-          title="GBV Reports"
-          value={mockClinicStats.gbvReportsThisMonth}
-          subtitle="This month"
+          title="GBV Cases"
+          value={stats?.totalGBVCases ?? 0}
+          subtitle="Total reported"
           icon={Shield}
           color="amber"
         />
         <StatsCard
-          title="Pending Sync"
-          value={mockClinicStats.syncPendingCount}
-          subtitle="Records to upload"
-          icon={RefreshCcw}
+          title="PNC Visits"
+          value={stats?.totalPNCVisits ?? 0}
+          subtitle="Postnatal care"
+          icon={ClipboardList}
+          color="emerald"
+        />
+      </div>
+
+      {/* Additional Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <StatsCard
+          title="Visits This Month"
+          value={stats?.visitsThisMonth ?? 0}
+          icon={Activity}
+          color="brand"
+        />
+        <StatsCard
+          title="Patients This Month"
+          value={stats?.patientsThisMonth ?? 0}
+          subtitle="New registrations"
+          icon={Users}
+          color="purple"
+        />
+        <StatsCard
+          title="Upcoming Appointments"
+          value={stats?.upcomingAppointments ?? 0}
+          subtitle="Next 7 days"
+          icon={Calendar}
           color="emerald"
         />
       </div>
@@ -95,35 +140,16 @@ export default function DashboardPage() {
         <QuickActions />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
-          <VisitsChart data={mockAnalyticsData.visitsByMonth} />
-        </div>
-        <div>
-          <TeleconsultMetrics data={mockAnalyticsData.teleconsultMetrics} />
-        </div>
-      </div>
-
       {/* Risk & Appointments Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <HighRiskPatients />
         <UpcomingAppointments />
       </div>
 
-      {/* Activity & Risk Distribution */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <RecentActivity />
-        </div>
-        <div>
-          <RiskDistributionChart data={mockAnalyticsData.riskDistribution} />
-        </div>
+      {/* Activity */}
+      <div className="grid grid-cols-1">
+        <RecentActivity />
       </div>
     </DashboardLayout>
   )
 }
-
-
-
-

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -9,7 +9,8 @@ import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
-import { currentUser, mockUsers } from '@/lib/mock-data'
+import { profileService, authService, rolesService } from '@/services'
+import type { Role } from '@/services/types'
 import {
   Settings,
   User,
@@ -20,7 +21,6 @@ import {
   Key,
   Save,
   Plus,
-  Edit,
   Trash2,
   Lock,
   Smartphone,
@@ -29,10 +29,88 @@ import {
   Sun,
   Languages,
   RefreshCcw,
+  HelpCircle,
+  Mail,
+  PhoneCall,
+  ExternalLink,
 } from 'lucide-react'
 
 export default function SettingsPage() {
   const [isDark, setIsDark] = useState(true)
+  const [profile, setProfile] = useState({ name: '', phone: '', role: 'doctor' })
+  const [isSaving, setIsSaving] = useState(false)
+  const [currentPw, setCurrentPw] = useState('')
+  const [newPw, setNewPw] = useState('')
+  const [confirmPw, setConfirmPw] = useState('')
+  const [pwMessage, setPwMessage] = useState('')
+  const [roles, setRoles] = useState<Role[]>([])
+  const [loadingRoles, setLoadingRoles] = useState(false)
+  const [helpInfo, setHelpInfo] = useState<{ email?: string; phone?: string; faqUrl?: string } | null>(null)
+  const [loadingHelp, setLoadingHelp] = useState(false)
+
+  useEffect(() => {
+    profileService.getMe().then(res => {
+      if (res.success && res.profile) {
+        setProfile({
+          name: res.profile.fullName || '',
+          phone: res.profile.phone || '',
+          role: 'doctor',
+        })
+      }
+    }).catch(() => {})
+
+    setLoadingRoles(true)
+    rolesService.getAll().then(res => {
+      if (res.success && res.roles) setRoles(res.roles)
+    }).catch(() => {}).finally(() => setLoadingRoles(false))
+
+    setLoadingHelp(true)
+    profileService.getHelp().then(res => {
+      if (res.success && res.data) {
+        const d = res.data as Record<string, unknown>
+        setHelpInfo({
+          email: (d.email as string) ?? undefined,
+          phone: (d.phone as string) ?? undefined,
+          faqUrl: (d.faqUrl as string) ?? undefined,
+        })
+      }
+    }).catch(() => {}).finally(() => setLoadingHelp(false))
+  }, [])
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true)
+    try {
+      await profileService.updateMe({ fullName: profile.name })
+    } catch {}
+    setIsSaving(false)
+  }
+
+  const handleChangePassword = async () => {
+    setPwMessage('')
+    if (!currentPw || !newPw) { setPwMessage('Please fill all password fields'); return }
+    if (newPw !== confirmPw) { setPwMessage('Passwords do not match'); return }
+    if (newPw.length < 4) { setPwMessage('Password must be at least 4 characters'); return }
+    try {
+      await authService.changePassword({ currentPassword: currentPw, newPassword: newPw })
+      setPwMessage('Password changed successfully!')
+      setCurrentPw(''); setNewPw(''); setConfirmPw('')
+    } catch (err) {
+      setPwMessage(err instanceof Error ? err.message : 'Failed to change password')
+    }
+  }
+
+  const handleAssignRole = async (userId: string, roleId: string) => {
+    try {
+      await rolesService.assign(userId, roleId)
+    } catch {}
+  }
+
+  const handleRemoveRole = async (userId: string, roleId: string) => {
+    if (!confirm('Remove this role from user?')) return
+    try {
+      await rolesService.remove(userId, roleId)
+    } catch {}
+  }
 
   return (
     <DashboardLayout
@@ -60,10 +138,10 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-6 mb-6">
-                  <Avatar fallback={currentUser.name} size="xl" status={currentUser.status} />
+                  <Avatar fallback={profile.name || 'User'} size="xl" status="online" />
                   <div>
-                    <h3 className="text-xl font-semibold">{currentUser.name}</h3>
-                    <p className="text-slate-500 capitalize">{currentUser.role}</p>
+                    <h3 className="text-xl font-semibold">{profile.name || 'User'}</h3>
+                    <p className="text-slate-500 capitalize">{profile.role}</p>
                     <Button variant="outline" size="sm" className="mt-2">
                       Change Photo
                     </Button>
@@ -71,9 +149,8 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Full Name" defaultValue={currentUser.name} />
-                  <Input label="Email" defaultValue={currentUser.email} />
-                  <Input label="Phone" defaultValue="+251912345678" />
+                  <Input label="Full Name" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
+                  <Input label="Phone Number" value={profile.phone} disabled />
                   <Select
                     label="Role"
                     options={[
@@ -82,16 +159,16 @@ export default function SettingsPage() {
                       { value: 'midwife', label: 'Midwife' },
                       { value: 'nurse', label: 'Nurse' },
                     ]}
-                    value={currentUser.role}
+                    value={profile.role}
+                    disabled
                   />
                 </div>
 
                 <div className="flex gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                  <Button variant="primary">
+                  <Button variant="primary" onClick={handleSaveProfile} isLoading={isSaving}>
                     <Save className="w-4 h-4" />
                     Save Changes
                   </Button>
-                  <Button variant="ghost">Cancel</Button>
                 </div>
               </CardContent>
             </Card>
@@ -126,11 +203,10 @@ export default function SettingsPage() {
                     </div>
                     <Select
                       options={[
-                        { value: 'en', label: 'English' },
-                        { value: 'am', label: 'Amharic' },
-                        { value: 'so', label: 'Somali' },
+                        { value: 'EN', label: 'English' },
+                        { value: 'SO', label: 'Soomaali' },
                       ]}
-                      value="en"
+                      value="EN"
                     />
                   </div>
 
@@ -168,34 +244,63 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-slate-200 dark:border-slate-700"
-                  >
-                    <div className="flex items-center gap-4">
-                      <Avatar fallback={user.name} size="md" status={user.status} />
-                      <div>
-                        <h4 className="font-medium">{user.name}</h4>
-                        <p className="text-sm text-slate-500">{user.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Badge variant="info" size="md" className="capitalize">
-                        {user.role}
-                      </Badge>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-500">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                <p className="text-sm text-slate-500 text-center py-8">
+                  No users listed. A user directory API is not available yet.
+                </p>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card variant="elevated" className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Key className="w-5 h-5 text-brand-500" />
+                Roles
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingRoles ? (
+                <p className="text-sm text-slate-500">Loading roles…</p>
+              ) : roles.length === 0 ? (
+                <p className="text-sm text-slate-500">No roles found</p>
+              ) : (
+                <div className="space-y-3">
+                  {roles.map((role) => (
+                    <div
+                      key={role.id}
+                      className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700"
+                    >
+                      <div>
+                        <h4 className="font-medium capitalize">{role.name}</h4>
+                        <p className="text-xs text-slate-500 font-mono">{role.id}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const userId = prompt('Enter user ID to assign this role:')
+                            if (userId) handleAssignRole(userId, role.id)
+                          }}
+                        >
+                          Assign
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-500"
+                          onClick={() => {
+                            const userId = prompt('Enter user ID to remove this role from:')
+                            if (userId) handleRemoveRole(userId, role.id)
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -255,10 +360,15 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Input label="Current Password" type="password" />
-                  <Input label="New Password" type="password" />
-                  <Input label="Confirm New Password" type="password" />
-                  <Button variant="primary">
+                  {pwMessage && (
+                    <div className={`p-3 rounded-lg text-sm ${pwMessage.includes('success') ? 'bg-green-50 border border-green-200 text-green-700' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+                      {pwMessage}
+                    </div>
+                  )}
+                  <Input label="Current Password" type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
+                  <Input label="New Password" type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+                  <Input label="Confirm New Password" type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+                  <Button variant="primary" onClick={handleChangePassword}>
                     <Lock className="w-4 h-4" />
                     Update Password
                   </Button>
@@ -368,6 +478,67 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card variant="elevated" className="lg:col-span-2 mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-brand-500" />
+                  Help &amp; Support
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loadingHelp ? (
+                  <p className="text-sm text-slate-500">Loading help information…</p>
+                ) : helpInfo ? (
+                  <div className="space-y-4">
+                    {helpInfo.email && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <Mail className="w-5 h-5 text-slate-400" />
+                        <div>
+                          <span className="text-sm text-slate-500">Email</span>
+                          <p className="font-medium">
+                            <a href={`mailto:${helpInfo.email}`} className="text-brand-500 hover:underline">
+                              {helpInfo.email}
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {helpInfo.phone && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <PhoneCall className="w-5 h-5 text-slate-400" />
+                        <div>
+                          <span className="text-sm text-slate-500">Phone</span>
+                          <p className="font-medium">
+                            <a href={`tel:${helpInfo.phone}`} className="text-brand-500 hover:underline">
+                              {helpInfo.phone}
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {helpInfo.faqUrl && (
+                      <div className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+                        <ExternalLink className="w-5 h-5 text-slate-400" />
+                        <div>
+                          <span className="text-sm text-slate-500">FAQ</span>
+                          <p className="font-medium">
+                            <a href={helpInfo.faqUrl} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline">
+                              View FAQ
+                            </a>
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    {!helpInfo.email && !helpInfo.phone && !helpInfo.faqUrl && (
+                      <p className="text-sm text-slate-500">No help information available</p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">Help information unavailable</p>
+                )}
               </CardContent>
             </Card>
           </div>

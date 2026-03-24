@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,7 +12,8 @@ import { Modal } from '@/components/ui/Modal'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Progress } from '@/components/ui/Progress'
-import { mockPatients, mockPrenatalVisits, mockClinics } from '@/lib/mock-data'
+import { patientService, visitService } from '@/services'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
 import {
   Search,
@@ -33,6 +34,7 @@ import {
   ChevronRight,
   User,
   Clock,
+  Trash2,
 } from 'lucide-react'
 import type { Patient } from '@/lib/types'
 
@@ -55,8 +57,45 @@ export default function PatientsPage() {
   const [clinicFilter, setClinicFilter] = useState('all')
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [showPatientModal, setShowPatientModal] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredPatients = mockPatients.filter((patient) => {
+  const loadPatients = () => {
+    setLoading(true)
+    patientService.getAll().then((res) => {
+      if (res.success && res.patients?.length) {
+        setPatients(
+          res.patients.map((p) => ({
+            id: p.id,
+            fullName: p.fullName,
+            age: p.age ?? 0,
+            dateOfBirth: '',
+            idNumber: p.idNumber ?? (p as any).unfpId ?? '',
+            phoneNumber: p.phone ?? undefined,
+            address: p.address ?? '',
+            village: p.woreda ?? '',
+            emergencyContact: p.emergencyContact ?? '',
+            emergencyPhone: p.emergencyPhone ?? '',
+            pregnancyStatus: 'pregnant' as const,
+            gravida: 0,
+            para: 0,
+            riskLevel: 'low' as const,
+            riskScore: 0,
+            riskFactors: [],
+            registeredAt: p.createdAt,
+            assignedMidwife: '',
+            syncStatus: 'synced' as const,
+            clinicId: p.facility ?? '',
+          }))
+        )
+      }
+    }).catch(() => {}).finally(() => setLoading(false))
+  }
+
+  useEffect(() => { loadPatients() }, [])
+
+  const filteredPatients = patients.filter((patient) => {
     const matchesSearch =
       patient.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       patient.idNumber.toLowerCase().includes(searchTerm.toLowerCase())
@@ -70,9 +109,209 @@ export default function PatientsPage() {
     setShowPatientModal(true)
   }
 
-  const patientVisits = selectedPatient
-    ? mockPrenatalVisits.filter((v) => v.patientId === selectedPatient.id)
-    : []
+  const [createForm, setCreateForm] = useState({
+    fullName: '',
+    phone: '',
+    age: '',
+    address: '',
+    subCity: '',
+    woreda: '',
+    kebele: '',
+    houseNo: '',
+    facility: '',
+    maritalStatus: '',
+    idNumber: '',
+    emergencyContact: '',
+    emergencyPhone: '',
+  })
+  const [creating, setCreating] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [editForm, setEditForm] = useState({ fullName: '', phone: '', age: '', address: '', woreda: '', emergencyContact: '', emergencyPhone: '' })
+  const [scheduleForm, setScheduleForm] = useState({ visitDate: '', bloodPressure: '', temperature: '', weight: '' })
+  const [editing, setEditing] = useState(false)
+  const [scheduling, setScheduling] = useState(false)
+  const [showEditVisitModal, setShowEditVisitModal] = useState(false)
+  const [editVisitForm, setEditVisitForm] = useState({ visitDate: '', bloodPressure: '', temperature: '', weight: '' })
+  const [editVisitId, setEditVisitId] = useState<string | null>(null)
+  const [editingVisit, setEditingVisit] = useState(false)
+
+  const handleCreatePatient = async () => {
+    if (!createForm.fullName.trim()) return
+    setCreating(true)
+    try {
+      const res = await patientService.create({
+        fullName: createForm.fullName,
+        phone: createForm.phone || undefined,
+        age: createForm.age ? parseInt(createForm.age) : undefined,
+        address: createForm.address || undefined,
+        subCity: createForm.subCity || undefined,
+        woreda: createForm.woreda || undefined,
+        kebele: createForm.kebele || undefined,
+        houseNo: createForm.houseNo || undefined,
+        facility: createForm.facility || undefined,
+        maritalStatus: createForm.maritalStatus || undefined,
+        idNumber: createForm.idNumber || undefined,
+        emergencyContact: createForm.emergencyContact || undefined,
+        emergencyPhone: createForm.emergencyPhone || undefined,
+      })
+      if (res.success) {
+        setShowCreateModal(false)
+        setCreateForm({ fullName: '', phone: '', age: '', address: '', subCity: '', woreda: '', kebele: '', houseNo: '', facility: '', maritalStatus: '', idNumber: '', emergencyContact: '', emergencyPhone: '' })
+        loadPatients()
+      }
+    } catch {
+      // handled silently
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleEditPatient = async () => {
+    if (!selectedPatient || !editForm.fullName.trim()) return
+    setEditing(true)
+    try {
+      await patientService.update(selectedPatient.id, {
+        fullName: editForm.fullName,
+        phone: editForm.phone || undefined,
+        age: editForm.age ? parseInt(editForm.age) : undefined,
+        address: editForm.address || undefined,
+        woreda: editForm.woreda || undefined,
+        emergencyContact: editForm.emergencyContact || undefined,
+        emergencyPhone: editForm.emergencyPhone || undefined,
+      })
+      setShowEditModal(false)
+      setShowPatientModal(false)
+      loadPatients()
+    } catch {} finally { setEditing(false) }
+  }
+
+  const handleDeletePatient = async () => {
+    if (!selectedPatient || !confirm('Are you sure you want to delete this patient?')) return
+    try {
+      await patientService.delete(selectedPatient.id)
+      setShowPatientModal(false)
+      loadPatients()
+    } catch {}
+  }
+
+  const handleScheduleVisit = async () => {
+    if (!selectedPatient || !scheduleForm.visitDate) return
+    setScheduling(true)
+    try {
+      await visitService.create({
+        patientId: selectedPatient.id,
+        visitDate: scheduleForm.visitDate,
+        bloodPressure: scheduleForm.bloodPressure || undefined,
+        temperature: scheduleForm.temperature ? parseFloat(scheduleForm.temperature) : undefined,
+        weight: scheduleForm.weight ? parseFloat(scheduleForm.weight) : undefined,
+      })
+      setShowScheduleModal(false)
+      setScheduleForm({ visitDate: '', bloodPressure: '', temperature: '', weight: '' })
+      setSelectedPatient({ ...selectedPatient })
+    } catch {} finally { setScheduling(false) }
+  }
+
+  const handleEditVisit = async () => {
+    if (!editVisitId || !editVisitForm.visitDate) return
+    setEditingVisit(true)
+    try {
+      await visitService.update(editVisitId, {
+        visitDate: editVisitForm.visitDate,
+        bloodPressure: editVisitForm.bloodPressure || undefined,
+        temperature: editVisitForm.temperature ? parseFloat(editVisitForm.temperature) : undefined,
+        weight: editVisitForm.weight ? parseFloat(editVisitForm.weight) : undefined,
+      })
+      setShowEditVisitModal(false)
+      setEditVisitForm({ visitDate: '', bloodPressure: '', temperature: '', weight: '' })
+      setEditVisitId(null)
+      if (selectedPatient) setSelectedPatient({ ...selectedPatient })
+    } catch {} finally { setEditingVisit(false) }
+  }
+
+  const handleDeleteVisit = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this visit?')) return
+    try {
+      await visitService.delete(id)
+      if (selectedPatient) setSelectedPatient({ ...selectedPatient })
+    } catch {}
+  }
+
+  const openEditVisitModal = (visit: typeof patientVisits[number]) => {
+    setEditVisitId(visit.id)
+    setEditVisitForm({
+      visitDate: visit.visitDate,
+      bloodPressure: visit.vitals.bloodPressureSystolic ? `${visit.vitals.bloodPressureSystolic}/${visit.vitals.bloodPressureDiastolic}` : '',
+      temperature: visit.vitals.temperature ? String(visit.vitals.temperature) : '',
+      weight: visit.vitals.weight ? String(visit.vitals.weight) : '',
+    })
+    setShowEditVisitModal(true)
+  }
+
+  const openEditModal = () => {
+    if (!selectedPatient) return
+    setEditForm({
+      fullName: selectedPatient.fullName,
+      phone: selectedPatient.phoneNumber || '',
+      age: String(selectedPatient.age),
+      address: selectedPatient.address,
+      woreda: selectedPatient.village,
+      emergencyContact: selectedPatient.emergencyContact,
+      emergencyPhone: selectedPatient.emergencyPhone,
+    })
+    setShowEditModal(true)
+  }
+
+  const [patientVisits, setPatientVisits] = useState<{
+    id: string
+    patientId: string
+    visitDate: string
+    visitNumber: number
+    gestationalAge: { weeks: number; days: number }
+    conductedBy: string
+    syncStatus: 'synced' | 'pending' | 'conflict'
+    riskFlags: string[]
+    vitals: {
+      bloodPressureSystolic: number
+      bloodPressureDiastolic: number
+      weight: number
+      temperature: number
+      fetalHeartRate: number
+      fundalHeight: number
+    }
+  }[]>([])
+
+  useEffect(() => {
+    if (!selectedPatient) { setPatientVisits([]); return }
+    visitService.getByPatient(selectedPatient.id).then(res => {
+      if (res.success && res.visits?.length) {
+        setPatientVisits(res.visits.map((v, i) => ({
+          id: v.id,
+          patientId: v.patientId,
+          visitDate: v.visitDate,
+          visitNumber: i + 1,
+          gestationalAge: { weeks: 0, days: 0 },
+          conductedBy: '',
+          syncStatus: 'synced' as const,
+          riskFlags: [] as string[],
+          vitals: {
+            bloodPressureSystolic: v.bloodPressure ? parseInt(v.bloodPressure.split('/')[0]) || 0 : 0,
+            bloodPressureDiastolic: v.bloodPressure ? parseInt(v.bloodPressure.split('/')[1]) || 0 : 0,
+            weight: v.weight ?? 0,
+            temperature: v.temperature ?? 0,
+            fetalHeartRate: 0,
+            fundalHeight: 0,
+          },
+        })))
+      }
+    }).catch(() => {})
+  }, [selectedPatient])
+
+  if (loading) return (
+    <DashboardLayout title="Patient Management" subtitle="Register, view, and manage maternal patient records">
+      <LoadingState message="Loading patients..." />
+    </DashboardLayout>
+  )
 
   return (
     <DashboardLayout
@@ -106,7 +345,6 @@ export default function PatientsPage() {
               <Select
                 options={[
                   { value: 'all', label: 'All Clinics' },
-                  ...mockClinics.map((c) => ({ value: c.id, label: c.name })),
                 ]}
                 value={clinicFilter}
                 onChange={(e) => setClinicFilter(e.target.value)}
@@ -117,7 +355,7 @@ export default function PatientsPage() {
                 <Download className="w-4 h-4" />
                 Export
               </Button>
-              <Button variant="primary" size="md">
+              <Button variant="primary" size="md" onClick={() => setShowCreateModal(true)}>
                 <Plus className="w-4 h-4" />
                 New Patient
               </Button>
@@ -383,17 +621,17 @@ export default function PatientsPage() {
               </div>
 
               <div className="flex gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                <Button variant="primary">
+                <Button variant="primary" onClick={openEditModal}>
                   <Edit className="w-4 h-4" />
                   Edit Patient
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => setShowScheduleModal(true)}>
                   <Calendar className="w-4 h-4" />
                   Schedule Visit
                 </Button>
-                <Button variant="ghost">
-                  <ChevronRight className="w-4 h-4" />
-                  Full Profile
+                <Button variant="danger" onClick={handleDeletePatient}>
+                  <Trash2 className="w-4 h-4" />
+                  Delete Patient
                 </Button>
               </div>
             </TabsContent>
@@ -451,6 +689,22 @@ export default function PatientsPage() {
                           ))}
                         </div>
                       )}
+                      <div className="mt-3 flex gap-2 justify-end">
+                        <button
+                          onClick={() => openEditVisitModal(visit)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors"
+                          title="Edit visit"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteVisit(visit.id)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          title="Delete visit"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))
                 ) : (
@@ -514,6 +768,197 @@ export default function PatientsPage() {
             </TabsContent>
           </Tabs>
         )}
+      </Modal>
+
+      {/* Create Patient Modal */}
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Register New Patient"
+        size="xl"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                placeholder="Enter full name"
+                value={createForm.fullName}
+                onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+              <Input
+                placeholder="Phone number"
+                value={createForm.phone}
+                onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Age</label>
+              <Input
+                placeholder="Age"
+                type="number"
+                value={createForm.age}
+                onChange={(e) => setCreateForm({ ...createForm, age: e.target.value })}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Address</label>
+              <Input
+                placeholder="Address"
+                value={createForm.address}
+                onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sub City</label>
+              <Input
+                placeholder="Sub city"
+                value={createForm.subCity}
+                onChange={(e) => setCreateForm({ ...createForm, subCity: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Woreda</label>
+              <Input
+                placeholder="Woreda"
+                value={createForm.woreda}
+                onChange={(e) => setCreateForm({ ...createForm, woreda: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kebele</label>
+              <Input
+                placeholder="Kebele"
+                value={createForm.kebele}
+                onChange={(e) => setCreateForm({ ...createForm, kebele: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">House No</label>
+              <Input
+                placeholder="House number"
+                value={createForm.houseNo}
+                onChange={(e) => setCreateForm({ ...createForm, houseNo: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Facility</label>
+              <Input
+                placeholder="Facility"
+                value={createForm.facility}
+                onChange={(e) => setCreateForm({ ...createForm, facility: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Marital Status</label>
+              <Select
+                options={[
+                  { value: '', label: 'Select...' },
+                  { value: 'single', label: 'Single' },
+                  { value: 'married', label: 'Married' },
+                  { value: 'divorced', label: 'Divorced' },
+                  { value: 'widowed', label: 'Widowed' },
+                ]}
+                value={createForm.maritalStatus}
+                onChange={(e) => setCreateForm({ ...createForm, maritalStatus: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ID Number</label>
+              <Input
+                placeholder="ID number"
+                value={createForm.idNumber}
+                onChange={(e) => setCreateForm({ ...createForm, idNumber: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Emergency Contact</label>
+              <Input
+                placeholder="Emergency contact name"
+                value={createForm.emergencyContact}
+                onChange={(e) => setCreateForm({ ...createForm, emergencyContact: e.target.value })}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Emergency Phone</label>
+              <Input
+                placeholder="Emergency phone number"
+                value={createForm.emergencyPhone}
+                onChange={(e) => setCreateForm({ ...createForm, emergencyPhone: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleCreatePatient}
+              disabled={!createForm.fullName.trim() || creating}
+            >
+              {creating ? 'Registering...' : 'Register Patient'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit Patient Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Patient" size="lg">
+        <div className="space-y-4">
+          <Input label="Full Name" value={editForm.fullName} onChange={e => setEditForm({ ...editForm, fullName: e.target.value })} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Phone" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
+            <Input label="Age" type="number" value={editForm.age} onChange={e => setEditForm({ ...editForm, age: e.target.value })} />
+          </div>
+          <Input label="Address" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} />
+          <Input label="Woreda" value={editForm.woreda} onChange={e => setEditForm({ ...editForm, woreda: e.target.value })} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Emergency Contact" value={editForm.emergencyContact} onChange={e => setEditForm({ ...editForm, emergencyContact: e.target.value })} />
+            <Input label="Emergency Phone" value={editForm.emergencyPhone} onChange={e => setEditForm({ ...editForm, emergencyPhone: e.target.value })} />
+          </div>
+          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="primary" onClick={handleEditPatient} isLoading={editing}>Save Changes</Button>
+            <Button variant="ghost" onClick={() => setShowEditModal(false)}>Cancel</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Schedule Visit Modal */}
+      <Modal isOpen={showScheduleModal} onClose={() => setShowScheduleModal(false)} title={`Schedule Visit for ${selectedPatient?.fullName ?? ''}`} size="md">
+        <div className="space-y-4">
+          <Input label="Visit Date" type="datetime-local" value={scheduleForm.visitDate} onChange={e => setScheduleForm({ ...scheduleForm, visitDate: e.target.value })} />
+          <Input label="Blood Pressure" placeholder="e.g. 120/80" value={scheduleForm.bloodPressure} onChange={e => setScheduleForm({ ...scheduleForm, bloodPressure: e.target.value })} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Temperature (°C)" type="number" step="0.1" value={scheduleForm.temperature} onChange={e => setScheduleForm({ ...scheduleForm, temperature: e.target.value })} />
+            <Input label="Weight (kg)" type="number" step="0.1" value={scheduleForm.weight} onChange={e => setScheduleForm({ ...scheduleForm, weight: e.target.value })} />
+          </div>
+          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="primary" onClick={handleScheduleVisit} isLoading={scheduling}>Schedule Visit</Button>
+            <Button variant="ghost" onClick={() => setShowScheduleModal(false)}>Cancel</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Edit Visit Modal */}
+      <Modal isOpen={showEditVisitModal} onClose={() => setShowEditVisitModal(false)} title="Edit Visit" size="md">
+        <div className="space-y-4">
+          <Input label="Visit Date" type="datetime-local" value={editVisitForm.visitDate} onChange={e => setEditVisitForm({ ...editVisitForm, visitDate: e.target.value })} />
+          <Input label="Blood Pressure" placeholder="e.g. 120/80" value={editVisitForm.bloodPressure} onChange={e => setEditVisitForm({ ...editVisitForm, bloodPressure: e.target.value })} />
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Temperature (°C)" type="number" step="0.1" value={editVisitForm.temperature} onChange={e => setEditVisitForm({ ...editVisitForm, temperature: e.target.value })} />
+            <Input label="Weight (kg)" type="number" step="0.1" value={editVisitForm.weight} onChange={e => setEditVisitForm({ ...editVisitForm, weight: e.target.value })} />
+          </div>
+          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="primary" onClick={handleEditVisit} isLoading={editingVisit}>Save Changes</Button>
+            <Button variant="ghost" onClick={() => setShowEditVisitModal(false)}>Cancel</Button>
+          </div>
+        </div>
       </Modal>
     </DashboardLayout>
   )

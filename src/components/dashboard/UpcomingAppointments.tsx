@@ -1,12 +1,14 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { cn, formatDate, formatDateTime } from '@/lib/utils'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Avatar } from '../ui/Avatar'
 import { Calendar, Clock, MapPin } from 'lucide-react'
+import { analyticsService } from '@/services'
 
-const appointments = [
+const fallbackAppointments = [
   {
     id: '1',
     patientName: 'Halima Abdi Omar',
@@ -64,6 +66,27 @@ const priorityBadge = {
 }
 
 export function UpcomingAppointments() {
+  const [appointments, setAppointments] = useState(fallbackAppointments)
+
+  useEffect(() => {
+    analyticsService.getTodaysAppointments().then(res => {
+      if (res.success && res.appointments?.length) {
+        setAppointments((res.appointments as Record<string, unknown>[]).map((a, i) => ({
+          id: String(a.id ?? i),
+          patientName: String(a.patientName ?? a.fullName ?? 'Unknown'),
+          patientId: String(a.patientId ?? a.unfpId ?? ''),
+          type: 'Appointment',
+          visitNumber: 0,
+          gestationalAge: '',
+          time: String(a.visitDate ?? a.scheduledDate ?? new Date().toISOString()),
+          clinic: String(a.facility ?? ''),
+          midwife: '',
+          priority: 'normal' as const,
+        })))
+      }
+    }).catch(() => {})
+  }, [])
+
   return (
     <Card variant="elevated">
       <CardHeader className="flex flex-row items-center justify-between">

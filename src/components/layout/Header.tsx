@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import {
   Search,
@@ -11,12 +11,32 @@ import {
   WifiOff,
   RefreshCcw,
   ChevronDown,
+  Globe,
 } from 'lucide-react'
 import { Badge } from '../ui/Badge'
 import { Input } from '../ui/Input'
 import { Avatar } from '../ui/Avatar'
-import { mockSyncStatus, mockAlerts, currentUser } from '@/lib/mock-data'
+import { profileService } from '@/services'
+
+const fallbackUser = {
+  id: '',
+  name: 'User',
+  email: '',
+  role: 'admin' as const,
+  lastActive: '',
+  status: 'online' as const,
+}
+const syncStatus = { isOnline: true, pendingUploads: 0 }
+const alerts: {
+  id: string
+  title: string
+  message: string
+  priority: 'critical' | 'high' | 'medium' | 'low'
+  readAt: string | null
+  createdAt: string
+}[] = []
 import { formatRelativeTime } from '@/lib/utils'
+import { useTranslation, LOCALE_LABELS, type Locale } from '@/lib/i18n'
 
 interface HeaderProps {
   title: string
@@ -24,9 +44,39 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle }: HeaderProps) {
+  const { t, locale, setLocale } = useTranslation()
   const [isDark, setIsDark] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  const unreadAlerts = mockAlerts.filter(a => !a.readAt).length
+  const [showLangMenu, setShowLangMenu] = useState(false)
+  const langRef = useRef<HTMLDivElement>(null)
+  const [currentUser, setCurrentUser] = useState(fallbackUser)
+
+  useEffect(() => {
+    profileService.getMe().then(res => {
+      if (res.success && res.profile) {
+        setCurrentUser({
+          id: res.profile.id,
+          name: res.profile.fullName || fallbackUser.name,
+          email: fallbackUser.email,
+          role: fallbackUser.role,
+          lastActive: new Date().toISOString(),
+          status: 'online' as const,
+        })
+      }
+    }).catch(() => {})
+  }, [])
+
+  const unreadAlerts = alerts.filter(a => !a.readAt).length
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (langRef.current && !langRef.current.contains(e.target as Node)) {
+        setShowLangMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const toggleTheme = () => {
     const newIsDark = !isDark
@@ -59,7 +109,7 @@ export function Header({ title, subtitle }: HeaderProps) {
             {/* Search */}
             <div className="hidden md:block w-64">
               <Input
-                placeholder="Search patients, visits..."
+                placeholder={t('header.searchPlaceholder')}
                 icon={Search}
                 className="bg-slate-100 dark:bg-slate-800 border-0"
               />
@@ -68,26 +118,26 @@ export function Header({ title, subtitle }: HeaderProps) {
             {/* Sync Status */}
             <div className={cn(
               'flex items-center gap-2 px-3 py-1.5 rounded-lg',
-              mockSyncStatus.isOnline
+              syncStatus.isOnline
                 ? 'bg-emerald-100 dark:bg-emerald-900/30'
                 : 'bg-red-100 dark:bg-red-900/30'
             )}>
-              {mockSyncStatus.isOnline ? (
+              {syncStatus.isOnline ? (
                 <Wifi className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               ) : (
                 <WifiOff className="w-4 h-4 text-red-600 dark:text-red-400" />
               )}
               <span className={cn(
                 'text-sm font-medium',
-                mockSyncStatus.isOnline
+                syncStatus.isOnline
                   ? 'text-emerald-700 dark:text-emerald-400'
                   : 'text-red-700 dark:text-red-400'
               )}>
-                {mockSyncStatus.isOnline ? 'Online' : 'Offline'}
+                {syncStatus.isOnline ? t('header.online') : t('header.offline')}
               </span>
-              {mockSyncStatus.pendingUploads > 0 && (
+              {syncStatus.pendingUploads > 0 && (
                 <Badge variant="warning" size="sm">
-                  {mockSyncStatus.pendingUploads} pending
+                  {syncStatus.pendingUploads} {t('header.pending')}
                 </Badge>
               )}
             </div>
@@ -96,6 +146,50 @@ export function Header({ title, subtitle }: HeaderProps) {
             <button className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
               <RefreshCcw className="w-5 h-5" />
             </button>
+
+            {/* Language Switcher */}
+            <div className="relative" ref={langRef}>
+              <button
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+              >
+                <Globe className="w-4 h-4" />
+                <span className="text-sm font-medium hidden sm:inline">
+                  {LOCALE_LABELS[locale]}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+
+              {showLangMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-slide-down z-50">
+                  <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-700">
+                    <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      {t('header.language')}
+                    </p>
+                  </div>
+                  {(Object.entries(LOCALE_LABELS) as [Locale, string][]).map(([key, label]) => (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setLocale(key)
+                        setShowLangMenu(false)
+                      }}
+                      className={cn(
+                        'w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between',
+                        locale === key
+                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 font-medium'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                      )}
+                    >
+                      {label}
+                      {locale === key && (
+                        <span className="w-2 h-2 rounded-full bg-brand-500" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Theme Toggle */}
             <button
@@ -123,11 +217,11 @@ export function Header({ title, subtitle }: HeaderProps) {
               {showNotifications && (
                 <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden animate-slide-down z-50">
                   <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-                    <h3 className="font-semibold text-slate-900 dark:text-white">Notifications</h3>
-                    <p className="text-sm text-slate-500">{unreadAlerts} unread alerts</p>
+                    <h3 className="font-semibold text-slate-900 dark:text-white">{t('header.notifications')}</h3>
+                    <p className="text-sm text-slate-500">{unreadAlerts} {t('header.unreadAlerts')}</p>
                   </div>
                   <div className="max-h-96 overflow-y-auto">
-                    {mockAlerts.slice(0, 5).map((alert) => (
+                    {alerts.slice(0, 5).map((alert) => (
                       <div
                         key={alert.id}
                         className={cn(
@@ -160,7 +254,7 @@ export function Header({ title, subtitle }: HeaderProps) {
                   </div>
                   <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900">
                     <a href="/dashboard/alerts" className="text-sm text-brand-600 dark:text-brand-400 hover:underline font-medium">
-                      View all notifications →
+                      {t('header.viewAllNotifications')}
                     </a>
                   </div>
                 </div>

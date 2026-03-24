@@ -17,7 +17,10 @@ interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, label, error, options, placeholder, ...props }, ref) => {
+  ({ className, label, error, options, placeholder, onChange, value, defaultValue, ...props }, ref) => {
+    const selectProps = value !== undefined && !onChange
+      ? { defaultValue: value, ...props }
+      : { value, defaultValue, onChange, ...props }
     return (
       <div className="w-full">
         {label && (
@@ -39,7 +42,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               'px-4 py-2.5 pr-10 text-sm',
               className
             )}
-            {...props}
+            {...selectProps}
           >
             {placeholder && (
               <option value="" disabled>

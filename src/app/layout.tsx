@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import { Providers } from './providers'
 
 export const metadata: Metadata = {
   title: 'UNFPA DMP Dashboard | Digital Maternity Package',
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-mesh-gradient">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

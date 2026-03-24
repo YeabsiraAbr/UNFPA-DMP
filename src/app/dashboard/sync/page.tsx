@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Progress } from '@/components/ui/Progress'
-import { mockSyncStatus, mockClinics } from '@/lib/mock-data'
+import { profileService } from '@/services'
 import { formatDateTime, formatRelativeTime, cn } from '@/lib/utils'
 import {
   RefreshCcw,
@@ -26,6 +26,21 @@ import {
   Play,
   Pause,
 } from 'lucide-react'
+
+const DEFAULT_SYNC_STATUS = {
+  isOnline: false,
+  pendingUploads: 0,
+  pendingDownloads: 0,
+  conflicts: 0,
+}
+
+const clinicSyncList: Array<{
+  id: string
+  name: string
+  status: string
+  lastSync: string
+  patientCount: number
+}> = []
 
 // Mock sync queue items
 const syncQueue = [
@@ -51,6 +66,15 @@ const syncConflicts = [
 
 export default function SyncStatusPage() {
   const [isSyncing, setIsSyncing] = useState(false)
+  const [syncData, setSyncData] = useState<{ lastSyncTime?: string } | null>(null)
+
+  useEffect(() => {
+    profileService.getSyncStatus().then(res => {
+      if (res.success && res.data) {
+        setSyncData(res.data as { lastSyncTime?: string })
+      }
+    }).catch(() => {})
+  }, [])
 
   const handleSync = () => {
     setIsSyncing(true)
@@ -65,7 +89,7 @@ export default function SyncStatusPage() {
       {/* Connection Status Banner */}
       <Card className={cn(
         'mb-6',
-        mockSyncStatus.isOnline
+        DEFAULT_SYNC_STATUS.isOnline
           ? 'bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border-emerald-200 dark:border-emerald-800'
           : 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-800'
       )}>
@@ -74,11 +98,11 @@ export default function SyncStatusPage() {
             <div className="flex items-center gap-3">
               <div className={cn(
                 'p-2 rounded-lg',
-                mockSyncStatus.isOnline
+                DEFAULT_SYNC_STATUS.isOnline
                   ? 'bg-emerald-200 dark:bg-emerald-800'
                   : 'bg-red-200 dark:bg-red-800'
               )}>
-                {mockSyncStatus.isOnline ? (
+                {DEFAULT_SYNC_STATUS.isOnline ? (
                   <Wifi className="w-5 h-5 text-emerald-700 dark:text-emerald-300" />
                 ) : (
                   <WifiOff className="w-5 h-5 text-red-700 dark:text-red-300" />
@@ -87,19 +111,19 @@ export default function SyncStatusPage() {
               <div>
                 <h3 className={cn(
                   'font-semibold',
-                  mockSyncStatus.isOnline
+                  DEFAULT_SYNC_STATUS.isOnline
                     ? 'text-emerald-800 dark:text-emerald-300'
                     : 'text-red-800 dark:text-red-300'
                 )}>
-                  {mockSyncStatus.isOnline ? 'Online - Connected to Server' : 'Offline - No Connection'}
+                  {DEFAULT_SYNC_STATUS.isOnline ? 'Online - Connected to Server' : 'Offline - No Connection'}
                 </h3>
                 <p className={cn(
                   'text-sm',
-                  mockSyncStatus.isOnline
+                  DEFAULT_SYNC_STATUS.isOnline
                     ? 'text-emerald-700 dark:text-emerald-400'
                     : 'text-red-700 dark:text-red-400'
                 )}>
-                  Last sync: {formatRelativeTime(mockSyncStatus.lastSyncTime)}
+                  Last sync: {syncData?.lastSyncTime ? formatRelativeTime(syncData.lastSyncTime) : '—'}
                 </p>
               </div>
             </div>
@@ -107,7 +131,7 @@ export default function SyncStatusPage() {
               variant="primary"
               onClick={handleSync}
               isLoading={isSyncing}
-              disabled={!mockSyncStatus.isOnline}
+              disabled={!DEFAULT_SYNC_STATUS.isOnline}
             >
               <RefreshCcw className={cn('w-4 h-4', isSyncing && 'animate-spin')} />
               {isSyncing ? 'Syncing...' : 'Sync Now'}
@@ -124,7 +148,7 @@ export default function SyncStatusPage() {
               <Upload className="w-5 h-5 text-brand-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{mockSyncStatus.pendingUploads}</p>
+              <p className="text-2xl font-bold">{DEFAULT_SYNC_STATUS.pendingUploads}</p>
               <p className="text-sm text-slate-500">Pending Uploads</p>
             </div>
           </div>
@@ -135,7 +159,7 @@ export default function SyncStatusPage() {
               <Download className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{mockSyncStatus.pendingDownloads}</p>
+              <p className="text-2xl font-bold">{DEFAULT_SYNC_STATUS.pendingDownloads}</p>
               <p className="text-sm text-slate-500">Pending Downloads</p>
             </div>
           </div>
@@ -146,7 +170,7 @@ export default function SyncStatusPage() {
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{mockSyncStatus.conflicts}</p>
+              <p className="text-2xl font-bold">{DEFAULT_SYNC_STATUS.conflicts}</p>
               <p className="text-sm text-slate-500">Conflicts</p>
             </div>
           </div>
@@ -285,7 +309,7 @@ export default function SyncStatusPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockClinics.map((clinic) => (
+                {clinicSyncList.map((clinic) => (
                   <div
                     key={clinic.id}
                     className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800"

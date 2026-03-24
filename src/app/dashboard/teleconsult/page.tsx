@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,7 +10,9 @@ import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Modal } from '@/components/ui/Modal'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
-import { mockTeleconsults, mockPatients } from '@/lib/mock-data'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { messagesService } from '@/services'
+import type { Conversation } from '@/services/types'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
 import {
   Search,
@@ -30,13 +32,52 @@ import {
 } from 'lucide-react'
 import type { TeleconsultRequest } from '@/lib/types'
 
+function conversationToTeleconsult(c: Conversation): TeleconsultRequest {
+  const r = c as Record<string, unknown>
+  const id = String(r.id ?? '')
+  const requestDate = String(
+    r.updatedAt ?? r.createdAt ?? new Date().toISOString()
+  )
+  return {
+    id,
+    patientId: String(r.patientId ?? r.otherUserId ?? ''),
+    patientName: String(r.otherUserName ?? r.patientName ?? 'Unknown'),
+    requestedBy: String(r.requestedBy ?? '—'),
+    requestDate,
+    priority: 'routine',
+    consultationType: 'general',
+    chiefComplaint: String(r.lastMessagePreview ?? r.subject ?? ''),
+    clinicalNotes: '',
+    attachments: [],
+    status: 'pending',
+    syncStatus: 'synced',
+  }
+}
+
 export default function TeleconsultPage() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [selectedConsult, setSelectedConsult] = useState<TeleconsultRequest | null>(null)
   const [showConsultModal, setShowConsultModal] = useState(false)
+  const [consults, setConsults] = useState<TeleconsultRequest[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredConsults = mockTeleconsults.filter((consult) => {
+  useEffect(() => {
+    setLoading(true)
+    messagesService
+      .listConversations()
+      .then((res) => {
+        if (res.success && res.conversations?.length) {
+          setConsults(res.conversations.map(conversationToTeleconsult))
+        } else {
+          setConsults([])
+        }
+      })
+      .catch(() => setConsults([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const filteredConsults = consults.filter((consult) => {
     const matchesStatus = statusFilter === 'all' || consult.status === statusFilter
     const matchesPriority = priorityFilter === 'all' || consult.priority === priorityFilter
     return matchesStatus && matchesPriority
@@ -61,6 +102,17 @@ export default function TeleconsultPage() {
     emergency: { variant: 'danger' as const, label: 'Emergency' },
   }
 
+  if (loading) {
+    return (
+      <DashboardLayout
+        title="Teleconsult"
+        subtitle="Asynchronous specialist consultations"
+      >
+        <LoadingState message="Loading teleconsults…" />
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout
       title="Teleconsult"
@@ -72,7 +124,7 @@ export default function TeleconsultPage() {
           <div className="flex items-center gap-3">
             <MessageSquare className="w-8 h-8 opacity-80" />
             <div>
-              <p className="text-3xl font-bold">{mockTeleconsults.length}</p>
+              <p className="text-3xl font-bold">{consults.length}</p>
               <p className="text-sm opacity-80">Total Requests</p>
             </div>
           </div>
@@ -82,7 +134,7 @@ export default function TeleconsultPage() {
             <Clock className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {mockTeleconsults.filter((t) => t.status === 'pending' || t.status === 'in_review').length}
+                {consults.filter((t) => t.status === 'pending' || t.status === 'in_review').length}
               </p>
               <p className="text-sm opacity-80">Awaiting Response</p>
             </div>
@@ -93,7 +145,7 @@ export default function TeleconsultPage() {
             <AlertTriangle className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {mockTeleconsults.filter((t) => t.priority === 'emergency').length}
+                {consults.filter((t) => t.priority === 'emergency').length}
               </p>
               <p className="text-sm opacity-80">Emergency</p>
             </div>
@@ -104,7 +156,7 @@ export default function TeleconsultPage() {
             <CheckCircle className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {mockTeleconsults.filter((t) => t.status === 'responded' || t.status === 'closed').length}
+                {consults.filter((t) => t.status === 'responded' || t.status === 'closed').length}
               </p>
               <p className="text-sm opacity-80">Resolved</p>
             </div>
@@ -148,8 +200,8 @@ export default function TeleconsultPage() {
       {/* Consultations List */}
       <div className="space-y-4">
         {filteredConsults.map((consult, index) => {
-          const status = statusConfig[consult.status]
-          const priority = priorityConfig[consult.priority]
+          const status = statusConfig[consult.status] ?? statusConfig.pending
+          const priority = priorityConfig[consult.priority] ?? priorityConfig.routine
           const StatusIcon = status.icon
 
           return (
@@ -253,11 +305,11 @@ export default function TeleconsultPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Badge variant={priorityConfig[selectedConsult.priority].variant} size="md">
-                      {priorityConfig[selectedConsult.priority].label}
+                    <Badge variant={(priorityConfig[selectedConsult.priority] ?? priorityConfig.routine).variant} size="md">
+                      {(priorityConfig[selectedConsult.priority] ?? priorityConfig.routine).label}
                     </Badge>
-                    <Badge variant={statusConfig[selectedConsult.status].variant} size="md" dot>
-                      {statusConfig[selectedConsult.status].label}
+                    <Badge variant={(statusConfig[selectedConsult.status] ?? statusConfig.pending).variant} size="md" dot>
+                      {(statusConfig[selectedConsult.status] ?? statusConfig.pending).label}
                     </Badge>
                   </div>
                 </div>

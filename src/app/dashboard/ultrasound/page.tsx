@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
-import { mockUltrasounds, mockPatients } from "@/lib/mock-data";
+import { ultrasoundService, patientService } from "@/services";
 import { formatDate, cn } from "@/lib/utils";
 import {
   Search,
@@ -26,10 +26,56 @@ import {
   Eye,
   AlertTriangle,
   CheckCircle,
-  XCircle,
   Baby,
+  Trash2,
+  Pencil,
 } from "lucide-react";
 import type { UltrasoundImage } from "@/lib/types";
+import type { UltrasoundScan } from "@/services/types";
+import type { Patient } from "@/lib/types";
+
+const ultrasoundDefaults: Omit<
+  UltrasoundImage,
+  | "id"
+  | "patientId"
+  | "visitId"
+  | "captureDate"
+  | "imageUrl"
+  | "thumbnailUrl"
+  | "findings"
+  | "gestationalAge"
+> = {
+  annotations: [],
+  quality: "good",
+  capturedBy: "",
+  reviewStatus: "pending",
+  syncStatus: "synced",
+};
+
+function scanToUltrasoundImage(scan: UltrasoundScan): UltrasoundImage {
+  const ga = scan.gestationalAge;
+  const weeks = ga != null ? Math.floor(ga) : 0;
+  const days =
+    ga != null
+      ? Math.max(0, Math.round((ga - Math.floor(ga)) * 7))
+      : 0;
+  const raw = scan as UltrasoundScan & { createdAt?: string };
+  const created =
+    typeof raw.createdAt === "string"
+      ? raw.createdAt
+      : new Date().toISOString();
+  return {
+    ...ultrasoundDefaults,
+    id: scan.id,
+    patientId: scan.patientId,
+    visitId: scan.visitId ?? undefined,
+    captureDate: created,
+    imageUrl: scan.imageUrl ?? "",
+    thumbnailUrl: scan.imageUrl ?? "",
+    findings: scan.description ?? "",
+    gestationalAge: { weeks, days },
+  };
+}
 
 export default function UltrasoundPage() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -39,13 +85,171 @@ export default function UltrasoundPage() {
     null
   );
   const [showImageModal, setShowImageModal] = useState(false);
+  const [ultrasounds, setUltrasounds] = useState<UltrasoundImage[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadForm, setUploadForm] = useState<{
+    patientId: string;
+    image: File | null;
+    description: string;
+    gestationalAge: number | "";
+  }>({
+    patientId: "",
+    image: null,
+    description: "",
+    gestationalAge: "",
+  });
+  const [uploading, setUploading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{
+    description: string;
+    gestationalAge: number | "";
+  }>({ description: "", gestationalAge: "" });
+  const [editing, setEditing] = useState(false);
+
+  const loadScansForPatients = async (pList: Patient[]) => {
+    if (!pList.length) {
+      setUltrasounds([]);
+      return;
+    }
+    const scansNested = await Promise.all(
+      pList.map((p) =>
+        ultrasoundService
+          .getByPatient(p.id)
+          .catch(() => ({
+            success: false as const,
+            scans: [] as UltrasoundScan[],
+          }))
+      )
+    );
+    const map = new Map<string, UltrasoundScan>();
+    for (const r of scansNested) {
+      if (r.success && r.scans) {
+        for (const s of r.scans) map.set(s.id, s);
+      }
+    }
+    setUltrasounds(Array.from(map.values()).map(scanToUltrasoundImage));
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    patientService
+      .getAll()
+      .then(async (res) => {
+        if (!res.success || !res.patients?.length) return;
+        const pList = res.patients;
+        const mapped = pList.map((p) => ({
+          id: p.id,
+          fullName: p.fullName,
+          age: p.age ?? 0,
+          dateOfBirth: "",
+          idNumber: p.idNumber ?? p.unfpId ?? "",
+          address: p.address ?? "",
+          village: p.subCity ?? p.woreda ?? "",
+          emergencyContact: p.emergencyContact ?? "",
+          emergencyPhone: p.emergencyPhone ?? "",
+          pregnancyStatus: "pregnant" as const,
+          gravida: 0,
+          para: 0,
+          riskLevel: "low" as const,
+          riskScore: 0,
+          riskFactors: [] as string[],
+          registeredAt: p.createdAt ?? "",
+          assignedMidwife: "",
+          syncStatus: "synced" as const,
+          clinicId: "",
+        }));
+        if (cancelled) return;
+        setPatients(mapped);
+        await loadScansForPatients(mapped);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleUpload = async () => {
+    if (!uploadForm.patientId || !uploadForm.image) return;
+    setUploading(true);
+    try {
+      const res = await ultrasoundService.create({
+        patientId: uploadForm.patientId,
+        image: uploadForm.image,
+        description: uploadForm.description.trim() || undefined,
+        gestationalAge:
+          uploadForm.gestationalAge === ""
+            ? undefined
+            : Number(uploadForm.gestationalAge),
+      });
+      if (res.success) {
+        setShowUploadModal(false);
+        setUploadForm({
+          patientId: patients[0]?.id ?? "",
+          image: null,
+          description: "",
+          gestationalAge: "",
+        });
+        await loadScansForPatients(patients);
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!editId) return;
+    setEditing(true);
+    try {
+      const payload: { description?: string; gestationalAge?: number } = {
+        description: editForm.description,
+      };
+      if (editForm.gestationalAge !== "")
+        payload.gestationalAge = Number(editForm.gestationalAge);
+
+      const res = await ultrasoundService.update(editId, payload);
+      if (res.success && res.scan) {
+        const updated = scanToUltrasoundImage(res.scan);
+        setUltrasounds((prev) =>
+          prev.map((u) => (u.id === editId ? updated : u))
+        );
+        if (selectedImage?.id === editId) setSelectedImage(updated);
+        setShowEditModal(false);
+        setEditId(null);
+      }
+    } finally {
+      setEditing(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this ultrasound scan? This cannot be undone."))
+      return;
+    try {
+      const res = await ultrasoundService.delete(id);
+      if (res.success) {
+        setUltrasounds((prev) => prev.filter((u) => u.id !== id));
+        if (selectedImage?.id === id) {
+          setShowImageModal(false);
+          setSelectedImage(null);
+        }
+        if (editId === id) {
+          setShowEditModal(false);
+          setEditId(null);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  };
 
   const getPatientName = (patientId: string) => {
-    const patient = mockPatients.find((p) => p.id === patientId);
+    const patient = patients.find((p) => p.id === patientId);
     return patient?.fullName || "Unknown";
   };
 
-  const filteredImages = mockUltrasounds.filter((img) => {
+  const filteredImages = ultrasounds.filter((img) => {
     const patientName = getPatientName(img.patientId);
     const matchesSearch = patientName
       .toLowerCase()
@@ -58,6 +262,11 @@ export default function UltrasoundPage() {
   const handleViewImage = (image: UltrasoundImage) => {
     setSelectedImage(image);
     setShowImageModal(true);
+    ultrasoundService.getById(image.id).then((res) => {
+      if (res.success && res.scan) {
+        setSelectedImage(scanToUltrasoundImage(res.scan));
+      }
+    }).catch(() => {});
   };
 
   const statusIcon = {
@@ -85,7 +294,7 @@ export default function UltrasoundPage() {
               <ImageIcon className="w-5 h-5 text-brand-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{mockUltrasounds.length}</p>
+              <p className="text-2xl font-bold">{ultrasounds.length}</p>
               <p className="text-sm text-slate-500">Total Scans</p>
             </div>
           </div>
@@ -98,7 +307,7 @@ export default function UltrasoundPage() {
             <div>
               <p className="text-2xl font-bold">
                 {
-                  mockUltrasounds.filter((u) => u.reviewStatus === "pending")
+                  ultrasounds.filter((u) => u.reviewStatus === "pending")
                     .length
                 }
               </p>
@@ -114,7 +323,7 @@ export default function UltrasoundPage() {
             <div>
               <p className="text-2xl font-bold">
                 {
-                  mockUltrasounds.filter((u) => u.reviewStatus === "flagged")
+                  ultrasounds.filter((u) => u.reviewStatus === "flagged")
                     .length
                 }
               </p>
@@ -130,7 +339,7 @@ export default function UltrasoundPage() {
             <div>
               <p className="text-2xl font-bold">
                 {
-                  mockUltrasounds.filter((u) => u.reviewStatus === "reviewed")
+                  ultrasounds.filter((u) => u.reviewStatus === "reviewed")
                     .length
                 }
               </p>
@@ -188,7 +397,18 @@ export default function UltrasoundPage() {
                 <List className="w-4 h-4" />
               </button>
             </div>
-            <Button variant="primary">
+            <Button
+              variant="primary"
+              onClick={() => {
+                setUploadForm({
+                  patientId: patients[0]?.id ?? "",
+                  image: null,
+                  description: "",
+                  gestationalAge: "",
+                });
+                setShowUploadModal(true);
+              }}
+            >
               <Upload className="w-4 h-4" />
               Upload Scan
             </Button>
@@ -212,8 +432,31 @@ export default function UltrasoundPage() {
               {/* Image Preview */}
               <div className="relative aspect-video bg-slate-900 flex items-center justify-center">
                 <div className="absolute inset-0 bg-gradient-to-b from-slate-800/50 to-transparent" />
-                <Baby className="w-16 h-16 text-slate-600" />
-                <div className="absolute top-3 right-3">
+                {image.imageUrl ? (
+                  <img
+                    src={image.imageUrl}
+                    alt=""
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <Baby className="w-16 h-16 text-slate-600 relative z-[1]" />
+                )}
+                <div className="absolute top-3 left-3 z-[2]">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="bg-black/50 text-white hover:bg-red-600/90 h-8 w-8 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(image.id);
+                    }}
+                    aria-label="Delete scan"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+                <div className="absolute top-3 right-3 z-[2]">
                   {statusIcon[image.reviewStatus]}
                 </div>
                 <div className="absolute bottom-3 left-3">
@@ -304,13 +547,27 @@ export default function UltrasoundPage() {
                         {image.findings}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm text-slate-900 dark:text-white">
-                        {formatDate(image.captureDate)}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        by {image.capturedBy}
-                      </p>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(image.id);
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                      <div className="text-right">
+                        <p className="text-sm text-slate-900 dark:text-white">
+                          {formatDate(image.captureDate)}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          by {image.capturedBy}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -330,8 +587,16 @@ export default function UltrasoundPage() {
         {selectedImage && (
           <div className="space-y-6">
             {/* Image Preview */}
-            <div className="aspect-video bg-slate-900 rounded-xl flex items-center justify-center relative">
-              <Baby className="w-24 h-24 text-slate-600" />
+            <div className="aspect-video bg-slate-900 rounded-xl flex items-center justify-center relative overflow-hidden">
+              {selectedImage.imageUrl ? (
+                <img
+                  src={selectedImage.imageUrl}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
+              ) : (
+                <Baby className="w-24 h-24 text-slate-600 relative z-[1]" />
+              )}
               <div className="absolute top-4 left-4 flex gap-2">
                 <Badge
                   variant="default"
@@ -491,7 +756,31 @@ export default function UltrasoundPage() {
             )}
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex flex-wrap gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditId(selectedImage.id);
+                  setEditForm({
+                    description: selectedImage.findings,
+                    gestationalAge:
+                      selectedImage.gestationalAge.weeks +
+                      selectedImage.gestationalAge.days / 7,
+                  });
+                  setShowEditModal(true);
+                }}
+              >
+                <Pencil className="w-4 h-4" />
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                className="text-red-600 border-red-200 hover:bg-red-50 dark:hover:bg-red-950/30"
+                onClick={() => handleDelete(selectedImage.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </Button>
               <Button variant="primary">
                 <Eye className="w-4 h-4" />
                 Mark as Reviewed
@@ -507,6 +796,142 @@ export default function UltrasoundPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        title="Upload scan"
+        description="Select a patient, attach an image, and add details."
+        size="lg"
+      >
+        <div className="space-y-4">
+          <Select
+            label="Patient"
+            options={patients.map((p) => ({
+              value: p.id,
+              label: p.fullName,
+            }))}
+            value={uploadForm.patientId}
+            onChange={(e) =>
+              setUploadForm((f) => ({ ...f, patientId: e.target.value }))
+            }
+            placeholder="Select patient"
+          />
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 dark:file:bg-brand-900/40 dark:file:text-brand-200"
+              onChange={(e) =>
+                setUploadForm((f) => ({
+                  ...f,
+                  image: e.target.files?.[0] ?? null,
+                }))
+              }
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              Description
+            </label>
+            <textarea
+              className="w-full min-h-[100px] rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              placeholder="Findings or notes"
+              value={uploadForm.description}
+              onChange={(e) =>
+                setUploadForm((f) => ({ ...f, description: e.target.value }))
+              }
+            />
+          </div>
+          <Input
+            label="Gestational age (weeks)"
+            type="number"
+            min={0}
+            value={uploadForm.gestationalAge === "" ? "" : uploadForm.gestationalAge}
+            onChange={(e) => {
+              const v = e.target.value;
+              setUploadForm((f) => ({
+                ...f,
+                gestationalAge: v === "" ? "" : Number(v),
+              }));
+            }}
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowUploadModal(false)}
+              disabled={uploading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleUpload}
+              disabled={
+                uploading || !uploadForm.patientId || !uploadForm.image
+              }
+            >
+              {uploading ? "Uploading…" : "Submit"}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditId(null);
+        }}
+        title="Edit scan"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              Description
+            </label>
+            <textarea
+              className="w-full min-h-[100px] rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              value={editForm.description}
+              onChange={(e) =>
+                setEditForm((f) => ({ ...f, description: e.target.value }))
+              }
+            />
+          </div>
+          <Input
+            label="Gestational age (weeks)"
+            type="number"
+            min={0}
+            value={editForm.gestationalAge === "" ? "" : editForm.gestationalAge}
+            onChange={(e) => {
+              const v = e.target.value;
+              setEditForm((f) => ({
+                ...f,
+                gestationalAge: v === "" ? "" : Number(v),
+              }));
+            }}
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowEditModal(false);
+                setEditId(null);
+              }}
+              disabled={editing}
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" onClick={handleEdit} disabled={editing}>
+              {editing ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </DashboardLayout>
   );

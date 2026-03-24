@@ -1,78 +1,138 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
-import { mockGBVReports, mockPatients } from '@/lib/mock-data'
-import { formatDate, cn } from '@/lib/utils'
-import {
-  Search,
-  Plus,
-  Shield,
-  Lock,
-  FileText,
-  AlertTriangle,
-  Clock,
-  CheckCircle,
-  XCircle,
-  User,
-  Calendar,
-  ArrowRight,
-  Eye,
-  Phone,
-  MapPin,
-  Heart,
-} from 'lucide-react'
-import type { GBVReport } from '@/lib/types'
+import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
+import { gbvReportService, patientService } from '@/services'
+import type { GBVReport, Patient } from '@/services/types'
+import { Plus, Search, Eye, Edit, Trash2, Shield, Lock, AlertTriangle } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
 export default function GBVPage() {
+  const [reports, setReports] = useState<GBVReport[]>([])
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showDetailModal, setShowDetailModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [selectedReport, setSelectedReport] = useState<GBVReport | null>(null)
-  const [showReportModal, setShowReportModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const getPatientName = (patientId: string) => {
-    const patient = mockPatients.find((p) => p.id === patientId)
-    return patient?.fullName || 'Confidential'
-  }
-
-  const filteredReports = mockGBVReports.filter((report) => {
-    const matchesStatus = statusFilter === 'all' || report.status === statusFilter
-    return matchesStatus
+  const [createForm, setCreateForm] = useState({
+    patientId: '',
+    incidentDate: '',
+    referral: false,
+    referralInfo: '',
+    highRisk: false,
+    attachment: null as File | null,
   })
 
-  const handleViewReport = (report: GBVReport) => {
-    setSelectedReport(report)
-    setShowReportModal(true)
+  const [editForm, setEditForm] = useState({
+    incidentDate: '',
+    referral: false,
+    referralInfo: '',
+    highRisk: false,
+  })
+
+  useEffect(() => {
+    loadData()
+  }, [])
+
+  async function loadData() {
+    setLoading(true)
+    try {
+      const pRes = await patientService.getAll()
+      if (pRes.success && pRes.patients) {
+        setPatients(pRes.patients)
+        const allReports: GBVReport[] = []
+        for (const p of pRes.patients.slice(0, 20)) {
+          try {
+            const gRes = await gbvReportService.getByPatient(p.id)
+            if (gRes.success && gRes.reports) allReports.push(...gRes.reports)
+          } catch {}
+        }
+        setReports(allReports)
+      }
+    } catch {}
+    setLoading(false)
   }
 
-  const statusConfig = {
-    open: { variant: 'danger' as const, icon: AlertTriangle, label: 'Open' },
-    in_progress: { variant: 'warning' as const, icon: Clock, label: 'In Progress' },
-    referred: { variant: 'info' as const, icon: ArrowRight, label: 'Referred' },
-    closed: { variant: 'success' as const, icon: CheckCircle, label: 'Closed' },
+  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? 'Unknown'
+
+  const resetCreateForm = () => {
+    setCreateForm({ patientId: '', incidentDate: '', referral: false, referralInfo: '', highRisk: false, attachment: null })
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const incidentTypeLabels = {
-    physical: 'Physical Violence',
-    sexual: 'Sexual Violence',
-    emotional: 'Emotional Abuse',
-    economic: 'Economic Abuse',
-    other: 'Other',
+  const handleCreate = async () => {
+    if (!createForm.patientId) return
+    setSaving(true)
+    try {
+      await gbvReportService.create({
+        patientId: createForm.patientId,
+        incidentDate: createForm.incidentDate || undefined,
+        referral: createForm.referral,
+        referralInfo: createForm.referralInfo || undefined,
+        highRisk: createForm.highRisk,
+        attachment: createForm.attachment ?? undefined,
+      })
+      setShowCreateModal(false)
+      resetCreateForm()
+      loadData()
+    } catch {}
+    setSaving(false)
   }
+
+  const openEdit = (report: GBVReport) => {
+    setEditForm({
+      incidentDate: report.incidentDate ?? '',
+      referral: report.referral ?? false,
+      referralInfo: report.referralInfo ?? '',
+      highRisk: report.highRisk ?? false,
+    })
+    setShowDetailModal(false)
+    setShowEditModal(true)
+  }
+
+  const handleUpdate = async () => {
+    if (!selectedReport) return
+    setSaving(true)
+    try {
+      await gbvReportService.update(selectedReport.id, {
+        incidentDate: editForm.incidentDate || undefined,
+        referral: editForm.referral,
+        referralInfo: editForm.referralInfo || undefined,
+        highRisk: editForm.highRisk,
+      })
+      setShowEditModal(false)
+      loadData()
+    } catch {}
+    setSaving(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this GBV report? This action cannot be undone.')) return
+    try {
+      await gbvReportService.delete(id)
+      setShowDetailModal(false)
+      loadData()
+    } catch {}
+  }
+
+  const filtered = reports.filter(r =>
+    getPatientName(r.patientId).toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
-    <DashboardLayout
-      title="GBV Reporting"
-      subtitle="Secure gender-based violence case management"
-    >
-      {/* Security Notice */}
+    <DashboardLayout title="GBV Reports" subtitle="Secure gender-based violence case management">
+      {/* Restricted Access Warning */}
       <Card className="mb-6 bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200 dark:border-amber-800">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
@@ -91,313 +151,148 @@ export default function GBVPage() {
         </CardContent>
       </Card>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-brand-50 dark:bg-brand-900/30">
-              <FileText className="w-5 h-5 text-brand-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{mockGBVReports.length}</p>
-              <p className="text-sm text-slate-500">Total Cases</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/30">
-              <AlertTriangle className="w-5 h-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">
-                {mockGBVReports.filter((r) => r.status === 'open').length}
-              </p>
-              <p className="text-sm text-slate-500">Open Cases</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/30">
-              <Clock className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">
-                {mockGBVReports.filter((r) => r.status === 'in_progress').length}
-              </p>
-              <p className="text-sm text-slate-500">In Progress</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/30">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">
-                {mockGBVReports.filter((r) => r.status === 'closed').length}
-              </p>
-              <p className="text-sm text-slate-500">Resolved</p>
-            </div>
-          </div>
-        </Card>
+      <div className="flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center justify-between">
+        <div className="w-full sm:w-80">
+          <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        </div>
+        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+          <Plus className="w-4 h-4" /> New Case Intake
+        </Button>
       </div>
 
-      {/* Controls */}
-      <Card className="mb-6 p-4">
-        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-          <div className="flex gap-3">
-            <Select
-              options={[
-                { value: 'all', label: 'All Cases' },
-                { value: 'open', label: 'Open' },
-                { value: 'in_progress', label: 'In Progress' },
-                { value: 'referred', label: 'Referred' },
-                { value: 'closed', label: 'Closed' },
-              ]}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            />
-          </div>
-          <Button variant="primary">
-            <Plus className="w-4 h-4" />
-            New Case Intake
-          </Button>
-        </div>
-      </Card>
-
-      {/* Cases List */}
-      <Card variant="elevated">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-brand-500" />
-            GBV Cases
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {filteredReports.map((report, index) => {
-              const config = statusConfig[report.status]
-              const StatusIcon = config.icon
-
-              return (
-                <div
-                  key={report.id}
-                  onClick={() => handleViewReport(report)}
-                  className={cn(
-                    'p-4 rounded-xl border cursor-pointer transition-all duration-200',
-                    'hover:shadow-md',
-                    report.status === 'open'
-                      ? 'border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-900/10'
-                      : report.status === 'in_progress'
-                      ? 'border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-900/10'
-                      : 'border-slate-200 dark:border-slate-700',
-                    'animate-slide-up'
-                  )}
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <div className={cn(
-                        'p-2 rounded-lg',
-                        report.confidentialityLevel === 'restricted'
-                          ? 'bg-red-100 dark:bg-red-900/30'
-                          : report.confidentialityLevel === 'high'
-                          ? 'bg-amber-100 dark:bg-amber-900/30'
-                          : 'bg-slate-100 dark:bg-slate-800'
-                      )}>
-                        <Shield className={cn(
-                          'w-5 h-5',
-                          report.confidentialityLevel === 'restricted'
-                            ? 'text-red-600'
-                            : report.confidentialityLevel === 'high'
-                            ? 'text-amber-600'
-                            : 'text-slate-600'
-                        )} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-semibold text-slate-900 dark:text-white">
-                            Case #{report.id.slice(-4).toUpperCase()}
-                          </h4>
-                          <Badge variant={config.variant} size="sm" dot>
-                            {config.label}
-                          </Badge>
-                          {report.confidentialityLevel === 'restricted' && (
-                            <Badge variant="danger" size="sm">
-                              <Lock className="w-3 h-3 mr-1" />
-                              Restricted
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-slate-500 mt-1">
-                          {incidentTypeLabels[report.incidentType]} • Reported {formatDate(report.reportDate)}
-                        </p>
-                        <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
-                          <User className="w-3 h-3" />
-                          <span>Reported by {report.reportedBy}</span>
-                        </div>
-                      </div>
+      {loading ? (
+        <LoadingState message="Loading GBV reports..." />
+      ) : filtered.length === 0 ? (
+        <EmptyState message="No GBV reports found" />
+      ) : (
+        <div className="grid gap-4">
+          {filtered.map(report => (
+            <Card key={report.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                      <Shield className="w-5 h-5 text-red-600" />
                     </div>
-                    <div className="text-right">
-                      {report.followUpRequired && report.followUpDate && (
-                        <div className="flex items-center gap-1 text-sm text-amber-600">
-                          <Calendar className="w-4 h-4" />
-                          <span>Follow-up: {formatDate(report.followUpDate)}</span>
-                        </div>
-                      )}
-                      {report.referrals.length > 0 && (
-                        <p className="text-xs text-slate-500 mt-1">
-                          {report.referrals.length} referral(s) made
-                        </p>
-                      )}
+                    <div>
+                      <h3 className="font-medium text-slate-900 dark:text-white">{getPatientName(report.patientId)}</h3>
+                      <div className="flex gap-3 text-sm text-slate-500 mt-1">
+                        {report.incidentDate && <span>Incident: {formatDate(report.incidentDate)}</span>}
+                        <span>{report.referral ? 'Referred' : 'No referral'}</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="flex items-center gap-2">
+                    {report.highRisk && (
+                      <Badge variant="danger" size="sm">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        High Risk
+                      </Badge>
+                    )}
+                    {report.referral && <Badge variant="info" size="sm">Referred</Badge>}
+                    <button onClick={() => { setSelectedReport(report); setShowDetailModal(true) }} className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500">
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDelete(report.id)} className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-500 hover:text-red-600">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-              )
-            })}
-          </div>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
-      {/* Report Detail Modal */}
-      <Modal
-        isOpen={showReportModal}
-        onClose={() => setShowReportModal(false)}
-        title={`Case #${selectedReport?.id.slice(-4).toUpperCase()}`}
-        size="lg"
-      >
+      {/* Create Modal */}
+      <Modal isOpen={showCreateModal} onClose={() => { setShowCreateModal(false); resetCreateForm() }} title="New Case Intake" size="lg">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <select className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm" value={createForm.patientId} onChange={e => setCreateForm({ ...createForm, patientId: e.target.value })}>
+              <option value="">Select a patient...</option>
+              {patients.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
+            </select>
+          </div>
+          <Input label="Incident Date" type="date" value={createForm.incidentDate} onChange={e => setCreateForm({ ...createForm, incidentDate: e.target.value })} />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600" checked={createForm.referral} onChange={e => setCreateForm({ ...createForm, referral: e.target.checked })} />
+            <span className="text-sm text-slate-700 dark:text-slate-300">Referral</span>
+          </label>
+          {createForm.referral && (
+            <Input label="Referral Information" value={createForm.referralInfo} onChange={e => setCreateForm({ ...createForm, referralInfo: e.target.value })} placeholder="Referral details..." />
+          )}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600" checked={createForm.highRisk} onChange={e => setCreateForm({ ...createForm, highRisk: e.target.checked })} />
+            <span className="text-sm text-slate-700 dark:text-slate-300">High Risk</span>
+          </label>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Attachment</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-brand-900/30 dark:file:text-brand-300"
+              onChange={e => setCreateForm({ ...createForm, attachment: e.target.files?.[0] ?? null })}
+            />
+          </div>
+          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="primary" onClick={handleCreate} isLoading={saving}>Create Report</Button>
+            <Button variant="ghost" onClick={() => { setShowCreateModal(false); resetCreateForm() }}>Cancel</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Detail Modal */}
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="GBV Report Details" size="lg">
         {selectedReport && (
-          <div className="space-y-6">
-            {/* Security Banner */}
+          <div className="space-y-4">
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-center gap-2">
               <Lock className="w-4 h-4 text-amber-600" />
               <span className="text-sm text-amber-700 dark:text-amber-400">
                 Confidential case data. Access is being logged.
               </span>
             </div>
-
-            {/* Status */}
-            <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
-              <div>
-                <p className="text-sm text-slate-500">Status</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge
-                    variant={statusConfig[selectedReport.status].variant}
-                    size="md"
-                    dot
-                  >
-                    {statusConfig[selectedReport.status].label}
-                  </Badge>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Incident Type</p>
-                <p className="font-semibold">{incidentTypeLabels[selectedReport.incidentType]}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Report Date</p>
-                <p className="font-semibold">{formatDate(selectedReport.reportDate)}</p>
-              </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><p className="text-xs text-slate-500">Patient</p><p className="font-medium">{getPatientName(selectedReport.patientId)}</p></div>
+              <div><p className="text-xs text-slate-500">Incident Date</p><p className="font-medium">{selectedReport.incidentDate ? formatDate(selectedReport.incidentDate) : 'N/A'}</p></div>
+              <div><p className="text-xs text-slate-500">Referral</p><p className="font-medium">{selectedReport.referral ? 'Yes' : 'No'}</p></div>
+              <div><p className="text-xs text-slate-500">Referral Info</p><p className="font-medium">{selectedReport.referralInfo ?? 'N/A'}</p></div>
+              <div><p className="text-xs text-slate-500">High Risk</p><p className="font-medium">{selectedReport.highRisk ? 'Yes' : 'No'}</p></div>
+              <div><p className="text-xs text-slate-500">Attachment</p><p className="font-medium">{selectedReport.attachment ? 'Uploaded' : 'None'}</p></div>
             </div>
-
-            {/* Incident Details */}
-            <div>
-              <h4 className="font-semibold mb-3">Incident Details</h4>
-              <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
-                <p className="text-slate-600 dark:text-slate-400">{selectedReport.description}</p>
-                {selectedReport.incidentDate && (
-                  <p className="text-sm text-slate-500 mt-2">
-                    Incident date: {formatDate(selectedReport.incidentDate)}
-                  </p>
-                )}
-                {selectedReport.perpetratorRelation && (
-                  <p className="text-sm text-slate-500 mt-1">
-                    Perpetrator relation: {selectedReport.perpetratorRelation}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Injuries */}
-            {selectedReport.injuries && (
-              <div>
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-red-500" />
-                  Injuries Documented
-                </h4>
-                <p className="text-slate-600 dark:text-slate-400 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                  {selectedReport.injuries}
-                </p>
-              </div>
-            )}
-
-            {/* Safety Plan */}
-            <div>
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <Heart className="w-4 h-4 text-brand-500" />
-                Safety Plan
-              </h4>
-              <p className="text-slate-600 dark:text-slate-400 p-4 rounded-lg bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800">
-                {selectedReport.safetyPlan}
-              </p>
-            </div>
-
-            {/* Referrals */}
-            {selectedReport.referrals.length > 0 && (
-              <div>
-                <h4 className="font-semibold mb-3">Referrals Made</h4>
-                <div className="space-y-2">
-                  {selectedReport.referrals.map((referral, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800"
-                    >
-                      <ArrowRight className="w-4 h-4 text-brand-500" />
-                      <span>{referral}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Follow-up */}
-            {selectedReport.followUpRequired && selectedReport.followUpDate && (
-              <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-amber-600" />
-                  <span className="font-medium">Follow-up scheduled:</span>
-                  <span>{formatDate(selectedReport.followUpDate)}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
             <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-              <Button variant="primary">
-                <FileText className="w-4 h-4" />
-                Update Case
+              <Button variant="primary" onClick={() => openEdit(selectedReport)}>
+                <Edit className="w-4 h-4" /> Update Case
               </Button>
-              <Button variant="outline">
-                <Phone className="w-4 h-4" />
-                Schedule Follow-up
+              <Button variant="ghost" onClick={() => handleDelete(selectedReport.id)}>
+                <Trash2 className="w-4 h-4" /> Delete
               </Button>
-              {selectedReport.status !== 'closed' && (
-                <Button variant="ghost">
-                  <CheckCircle className="w-4 h-4" />
-                  Close Case
-                </Button>
-              )}
             </div>
           </div>
         )}
       </Modal>
+
+      {/* Edit Modal */}
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Update GBV Report" size="lg">
+        <div className="space-y-4">
+          <Input label="Incident Date" type="date" value={editForm.incidentDate} onChange={e => setEditForm({ ...editForm, incidentDate: e.target.value })} />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600" checked={editForm.referral} onChange={e => setEditForm({ ...editForm, referral: e.target.checked })} />
+            <span className="text-sm text-slate-700 dark:text-slate-300">Referral</span>
+          </label>
+          {editForm.referral && (
+            <Input label="Referral Information" value={editForm.referralInfo} onChange={e => setEditForm({ ...editForm, referralInfo: e.target.value })} placeholder="Referral details..." />
+          )}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600" checked={editForm.highRisk} onChange={e => setEditForm({ ...editForm, highRisk: e.target.checked })} />
+            <span className="text-sm text-slate-700 dark:text-slate-300">High Risk</span>
+          </label>
+          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>Save Changes</Button>
+            <Button variant="ghost" onClick={() => setShowEditModal(false)}>Cancel</Button>
+          </div>
+        </div>
+      </Modal>
     </DashboardLayout>
   )
 }
-
-
-
-

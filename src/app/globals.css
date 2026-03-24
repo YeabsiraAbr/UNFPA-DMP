@@ -1,43 +1,57 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-outfit: 'Outfit', system-ui, sans-serif;
-  --font-playfair: 'Playfair Display', Georgia, serif;
-  --font-jetbrains: 'JetBrains Mono', monospace;
-  
+  --font-outfit: "Outfit", system-ui, sans-serif;
+  --font-playfair: "Playfair Display", Georgia, serif;
+  --font-jetbrains: "JetBrains Mono", monospace;
+
   /* Light theme (default) */
-  --bg-primary: #F8FAFC;
-  --bg-secondary: #FFFFFF;
-  --bg-tertiary: #F1F5F9;
-  --text-primary: #0F172A;
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94A3B8;
-  --border-color: #E2E8F0;
-  --accent-primary: #0891B2;
-  --accent-secondary: #06B6D4;
+  --text-muted: #94a3b8;
+  --border-color: #e2e8f0;
+  --accent-primary: #0891b2;
+  --accent-secondary: #06b6d4;
 }
 
 .dark {
-  --bg-primary: #0F172A;
-  --bg-secondary: #1E293B;
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
   --bg-tertiary: #334155;
-  --text-primary: #F8FAFC;
-  --text-secondary: #CBD5E1;
-  --text-muted: #64748B;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
   --border-color: #334155;
-  --accent-primary: #22D3EE;
-  --accent-secondary: #06B6D4;
+  --accent-primary: #22d3ee;
+  --accent-secondary: #06b6d4;
 }
 
 /* Animation for login error */
 @keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
-  20%, 40%, 60%, 80% { transform: translateX(4px); }
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-4px);
+  }
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(4px);
+  }
 }
 
 .animate-shake {
@@ -85,29 +99,33 @@ body {
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { 
-    opacity: 0; 
-    transform: translateY(20px); 
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes slideIn {
-  from { 
-    opacity: 0; 
-    transform: translateX(-20px); 
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateX(0); 
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -135,33 +153,45 @@ body {
 }
 
 /* Stagger delays for list items */
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.1s; }
-.stagger-3 { animation-delay: 0.15s; }
-.stagger-4 { animation-delay: 0.2s; }
-.stagger-5 { animation-delay: 0.25s; }
-.stagger-6 { animation-delay: 0.3s; }
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+.stagger-5 {
+  animation-delay: 0.25s;
+}
+.stagger-6 {
+  animation-delay: 0.3s;
+}
 
 /* Gradient backgrounds - Light mode (default) */
 .bg-mesh-gradient {
-  background: 
+  background:
     radial-gradient(at 40% 20%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
     radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
     radial-gradient(at 0% 50%, rgba(6, 182, 212, 0.04) 0px, transparent 50%),
     radial-gradient(at 80% 50%, rgba(236, 72, 153, 0.03) 0px, transparent 50%),
     radial-gradient(at 0% 100%, rgba(6, 182, 212, 0.05) 0px, transparent 50%),
-    #F8FAFC;
+    #f8fafc;
 }
 
 /* Dark mode mesh gradient */
 .dark .bg-mesh-gradient {
-  background: 
+  background:
     radial-gradient(at 40% 20%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
     radial-gradient(at 80% 0%, rgba(139, 92, 246, 0.06) 0px, transparent 50%),
     radial-gradient(at 0% 50%, rgba(6, 182, 212, 0.05) 0px, transparent 50%),
     radial-gradient(at 80% 50%, rgba(236, 72, 153, 0.04) 0px, transparent 50%),
     radial-gradient(at 0% 100%, rgba(6, 182, 212, 0.06) 0px, transparent 50%),
-    #0F172A;
+    #0f172a;
 }
 
 /* Card hover effects */
@@ -179,17 +209,17 @@ body {
 }
 
 /* Risk level indicators */
-.risk-low { 
-  background: linear-gradient(135deg, #10B981 0%, #34D399 100%); 
+.risk-low {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
 }
-.risk-medium { 
-  background: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%); 
+.risk-medium {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
 }
-.risk-high { 
-  background: linear-gradient(135deg, #F97316 0%, #FB923C 100%); 
+.risk-high {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
 }
-.risk-critical { 
-  background: linear-gradient(135deg, #EF4444 0%, #F87171 100%); 
+.risk-critical {
+  background: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
 }
 
 /* Status badges */
@@ -237,7 +267,7 @@ body {
 }
 
 .pulse-alert::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: -2px;
   border-radius: inherit;
@@ -252,13 +282,13 @@ body {
 }
 
 .tab-active::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: -1px;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, #0891B2, #06B6D4);
+  background: linear-gradient(90deg, #0891b2, #06b6d4);
   border-radius: 2px 2px 0 0;
 }
 
@@ -278,10 +308,9 @@ input[type="number"] {
   .no-print {
     display: none !important;
   }
-  
+
   body {
     background: white;
     color: black;
   }
 }
-

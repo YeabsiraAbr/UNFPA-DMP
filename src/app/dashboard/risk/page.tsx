@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -8,7 +8,9 @@ import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Progress } from '@/components/ui/Progress'
 import { Modal } from '@/components/ui/Modal'
-import { mockPatients } from '@/lib/mock-data'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { analyticsService } from '@/services'
+import type { HighRiskPatient } from '@/services/types'
 import { formatDate, cn } from '@/lib/utils'
 import {
   Brain,
@@ -24,6 +26,31 @@ import {
   Clock,
 } from 'lucide-react'
 import type { Patient } from '@/lib/types'
+
+function patientFromHighRisk(hp: HighRiskPatient): Patient {
+  const p = hp.patient
+  return {
+    id: p.id,
+    fullName: p.fullName ?? 'Unknown',
+    age: p.age ?? 0,
+    dateOfBirth: '',
+    idNumber: p.idNumber ?? p.unfpId ?? '',
+    address: p.address ?? '',
+    village: p.subCity ?? p.woreda ?? '',
+    emergencyContact: p.emergencyContact ?? '',
+    emergencyPhone: p.emergencyPhone ?? '',
+    pregnancyStatus: 'pregnant',
+    gravida: 0,
+    para: 0,
+    riskLevel: 'high',
+    riskScore: 80,
+    riskFactors: hp.riskFactors ?? [],
+    registeredAt: p.createdAt ?? '',
+    assignedMidwife: '',
+    syncStatus: 'synced',
+    clinicId: '',
+  }
+}
 
 // Risk rules for demonstration
 const riskRules = [
@@ -80,10 +107,24 @@ const riskRules = [
 export default function RiskAssessmentPage() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [showRiskModal, setShowRiskModal] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const highRiskPatients = mockPatients.filter(
-    (p) => p.riskLevel === 'high' || p.riskLevel === 'critical'
-  )
+  const [highRiskPatients, setHighRiskPatients] = useState<Patient[]>([])
+
+  useEffect(() => {
+    setLoading(true)
+    analyticsService
+      .getHighRiskPatients()
+      .then((res) => {
+        if (res.success && res.patients?.length) {
+          setHighRiskPatients(res.patients.map(patientFromHighRisk))
+        } else {
+          setHighRiskPatients([])
+        }
+      })
+      .catch(() => setHighRiskPatients([]))
+      .finally(() => setLoading(false))
+  }, [])
 
   const handleViewRisk = (patient: Patient) => {
     setSelectedPatient(patient)
@@ -103,6 +144,17 @@ export default function RiskAssessmentPage() {
       default:
         return { variant: 'default' as const, icon: Info }
     }
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout
+        title="AI Risk Assessment"
+        subtitle="Rule-based risk analysis and patient flagging"
+      >
+        <LoadingState message="Loading risk data…" />
+      </DashboardLayout>
+    )
   }
 
   return (
@@ -138,7 +190,7 @@ export default function RiskAssessmentPage() {
               <Activity className="w-5 h-5 text-brand-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">{mockPatients.length}</p>
+              <p className="text-2xl font-bold">{highRiskPatients.length}</p>
               <p className="text-sm text-slate-500">Assessed</p>
             </div>
           </div>
@@ -150,7 +202,7 @@ export default function RiskAssessmentPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">
-                {mockPatients.filter((p) => p.riskLevel === 'low').length}
+                {highRiskPatients.filter((p) => p.riskLevel === 'low').length}
               </p>
               <p className="text-sm text-slate-500">Low Risk</p>
             </div>
@@ -163,7 +215,7 @@ export default function RiskAssessmentPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">
-                {mockPatients.filter((p) => p.riskLevel === 'high').length}
+                {highRiskPatients.filter((p) => p.riskLevel === 'high').length}
               </p>
               <p className="text-sm text-slate-500">High Risk</p>
             </div>
@@ -176,7 +228,7 @@ export default function RiskAssessmentPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">
-                {mockPatients.filter((p) => p.riskLevel === 'critical').length}
+                {highRiskPatients.filter((p) => p.riskLevel === 'critical').length}
               </p>
               <p className="text-sm text-slate-500">Critical</p>
             </div>
