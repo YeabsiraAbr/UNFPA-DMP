@@ -7,28 +7,42 @@ import type {
   SuccessResponse,
 } from "./types";
 
+function extractArray(res: Record<string, unknown>): Patient[] {
+  return (res.data ?? res.patients ?? []) as Patient[];
+}
+
+function extractOne(res: Record<string, unknown>): Patient {
+  return (res.data ?? res.patient ?? res) as Patient;
+}
+
 export const patientService = {
   async getAll(): Promise<{ success: boolean; patients: Patient[] }> {
-    return api.get("/patient");
+    const raw = await api.get<Record<string, unknown>>("/patient");
+    return { success: true, patients: extractArray(raw) };
   },
 
   async getById(id: string): Promise<{ success: boolean; patient: Patient }> {
-    return api.get(`/patient/${id}`);
+    const raw = await api.get<Record<string, unknown>>(`/patient/${id}`);
+    return { success: true, patient: extractOne(raw) };
   },
 
-  async create(data: CreatePatientRequest): Promise<{ success: boolean; patient: Patient }> {
-    return api.post("/patient", { body: data });
+  async create(data: CreatePatientRequest): Promise<{ success: boolean }> {
+    await api.post("/patient", { body: data });
+    return { success: true };
   },
 
-  async update(id: string, data: UpdatePatientRequest): Promise<{ success: boolean; patient: Patient }> {
-    return api.patch(`/patient/${id}`, { body: data });
+  async update(id: string, data: UpdatePatientRequest): Promise<{ success: boolean }> {
+    await api.patch(`/patient/${id}`, { body: data });
+    return { success: true };
   },
 
   async delete(id: string): Promise<SuccessResponse> {
-    return api.delete(`/patient/${id}`);
+    await api.delete(`/patient/${id}`);
+    return { success: true };
   },
 
   async registerClient(data: RegisterClientRequest): Promise<SuccessResponse> {
-    return api.post("/patient/register-client", { body: data });
+    await api.post("/patient/register-client", { body: data });
+    return { success: true };
   },
 };

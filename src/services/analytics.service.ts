@@ -3,7 +3,9 @@ import type { DashboardStats, HighRiskPatient } from "./types";
 
 export const analyticsService = {
   async getDashboard(): Promise<{ success: boolean; data: DashboardStats }> {
-    return api.get("/analytics/dashboard");
+    const raw = await api.get<Record<string, unknown>>("/analytics/dashboard");
+    const stats = (raw.data ?? raw) as DashboardStats;
+    return { success: true, data: stats };
   },
 
   async getTodaysAppointments(): Promise<{
@@ -11,7 +13,9 @@ export const analyticsService = {
     count: number;
     appointments: unknown[];
   }> {
-    return api.get("/analytics/appointments/today");
+    const raw = await api.get<Record<string, unknown>>("/analytics/appointments/today");
+    const appointments = (raw.data ?? raw.appointments ?? []) as unknown[];
+    return { success: true, count: (raw.count as number) ?? appointments.length, appointments };
   },
 
   async getHighRiskPatients(): Promise<{
@@ -19,6 +23,8 @@ export const analyticsService = {
     count: number;
     patients: HighRiskPatient[];
   }> {
-    return api.get("/analytics/high-risk");
+    const raw = await api.get<Record<string, unknown>>("/analytics/high-risk");
+    const patients = (raw.data ?? raw.patients ?? []) as HighRiskPatient[];
+    return { success: true, count: (raw.count as number) ?? patients.length, patients };
   },
 };

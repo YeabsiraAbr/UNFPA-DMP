@@ -1,63 +1,25 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { cn, formatDate, formatDateTime } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import { Badge } from '../ui/Badge'
 import { Avatar } from '../ui/Avatar'
-import { Calendar, Clock, MapPin } from 'lucide-react'
+import { Calendar, Clock, MapPin, Loader2, Inbox } from 'lucide-react'
 import { analyticsService } from '@/services'
 
-const fallbackAppointments = [
-  {
-    id: '1',
-    patientName: 'Halima Abdi Omar',
-    patientId: 'ETH-NOG-2024-001',
-    type: 'Prenatal Checkup',
-    visitNumber: 6,
-    gestationalAge: '25w3d',
-    time: new Date(Date.now() + 3600000).toISOString(),
-    clinic: 'Gode Mobile Clinic',
-    midwife: 'Fatima Ali',
-    priority: 'normal' as const,
-  },
-  {
-    id: '2',
-    patientName: 'Zahra Ahmed Nur',
-    patientId: 'ETH-NOG-2024-004',
-    type: 'Follow-up (High Risk)',
-    visitNumber: 3,
-    gestationalAge: '21w1d',
-    time: new Date(Date.now() + 7200000).toISOString(),
-    clinic: 'Shilabo Mobile Unit',
-    midwife: 'Sara Mohammed',
-    priority: 'urgent' as const,
-  },
-  {
-    id: '3',
-    patientName: 'Khadija Ibrahim Hassan',
-    patientId: 'ETH-NOG-2024-003',
-    type: 'Prenatal Checkup',
-    visitNumber: 9,
-    gestationalAge: '29w5d',
-    time: new Date(Date.now() + 14400000).toISOString(),
-    clinic: 'Gode Mobile Clinic',
-    midwife: 'Fatima Ali',
-    priority: 'high' as const,
-  },
-  {
-    id: '4',
-    patientName: 'Amina Mohammed Yusuf',
-    patientId: 'ETH-NOG-2024-002',
-    type: 'Prenatal Checkup',
-    visitNumber: 4,
-    gestationalAge: '18w2d',
-    time: new Date(Date.now() + 86400000).toISOString(),
-    clinic: 'Kebri Dehar Health Center',
-    midwife: 'Sara Mohammed',
-    priority: 'normal' as const,
-  },
-]
+interface Appointment {
+  id: string
+  patientName: string
+  patientId: string
+  type: string
+  visitNumber: number
+  gestationalAge: string
+  time: string
+  clinic: string
+  midwife: string
+  priority: 'normal' | 'high' | 'urgent'
+}
 
 const priorityBadge = {
   normal: { variant: 'default' as const, label: 'Routine' },
@@ -66,7 +28,8 @@ const priorityBadge = {
 }
 
 export function UpcomingAppointments() {
-  const [appointments, setAppointments] = useState(fallbackAppointments)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     analyticsService.getTodaysAppointments().then(res => {
@@ -74,26 +37,37 @@ export function UpcomingAppointments() {
         setAppointments((res.appointments as Record<string, unknown>[]).map((a, i) => ({
           id: String(a.id ?? i),
           patientName: String(a.patientName ?? a.fullName ?? 'Unknown'),
-          patientId: String(a.patientId ?? a.unfpId ?? ''),
+          patientId: String(a.patientId ?? ''),
           type: 'Appointment',
           visitNumber: 0,
           gestationalAge: '',
           time: String(a.visitDate ?? a.scheduledDate ?? new Date().toISOString()),
-          clinic: String(a.facility ?? ''),
+          clinic: String(a.clinicName ?? a.clinicId ?? ''),
           midwife: '',
           priority: 'normal' as const,
         })))
       }
-    }).catch(() => {})
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   return (
     <Card variant="elevated">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Upcoming Appointments</CardTitle>
-        <Badge variant="info">{appointments.length} today</Badge>
+        <Badge variant="info">{loading ? '…' : `${appointments.length} today`}</Badge>
       </CardHeader>
       <CardContent>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">Loading appointments…</p>
+          </div>
+        ) : appointments.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 gap-3">
+            <Inbox className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+            <p className="text-sm text-slate-500 dark:text-slate-400">No upcoming appointments today.</p>
+          </div>
+        ) : (
         <div className="space-y-4">
           {appointments.map((apt, index) => (
             <div
@@ -122,9 +96,6 @@ export function UpcomingAppointments() {
                       <Badge variant={priorityBadge[apt.priority].variant} size="sm">
                         {priorityBadge[apt.priority].label}
                       </Badge>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        Visit #{apt.visitNumber} • {apt.gestationalAge}
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -136,28 +107,19 @@ export function UpcomingAppointments() {
                     <Clock className="w-3.5 h-3.5" />
                     {new Date(apt.time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <div className="flex items-center justify-end gap-1 mt-0.5 text-xs text-slate-400">
-                    <MapPin className="w-3 h-3" />
-                    {apt.clinic}
-                  </div>
+                  {apt.clinic && (
+                    <div className="flex items-center justify-end gap-1 mt-0.5 text-xs text-slate-400">
+                      <MapPin className="w-3 h-3" />
+                      {apt.clinic}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           ))}
         </div>
-        <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-          <a
-            href="/dashboard/appointments"
-            className="text-sm text-brand-600 dark:text-brand-400 hover:underline font-medium"
-          >
-            View full schedule →
-          </a>
-        </div>
+        )}
       </CardContent>
     </Card>
   )
 }
-
-
-
-

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { gbvReportService, patientService } from '@/services'
+import { gbvReportService, getCachedPatients } from '@/services'
 import type { GBVReport, Patient } from '@/services/types'
 import { Plus, Search, Eye, Edit, Trash2, Shield, Lock, AlertTriangle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
@@ -48,11 +48,11 @@ export default function GBVPage() {
   async function loadData() {
     setLoading(true)
     try {
-      const pRes = await patientService.getAll()
-      if (pRes.success && pRes.patients) {
-        setPatients(pRes.patients)
+      const pList = await getCachedPatients()
+      if (pList.length) {
+        setPatients(pList)
         const allReports: GBVReport[] = []
-        for (const p of pRes.patients.slice(0, 20)) {
+        for (const p of pList.slice(0, 20)) {
           try {
             const gRes = await gbvReportService.getByPatient(p.id)
             if (gRes.success && gRes.reports) allReports.push(...gRes.reports)

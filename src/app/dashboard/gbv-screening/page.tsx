@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { gbvScreeningService, patientService } from '@/services'
+import { gbvScreeningService, getCachedPatients } from '@/services'
 import type { GBVScreening, Patient } from '@/services/types'
 import { Plus, Search, Eye, Pencil, Trash2, ShieldAlert, Lock } from 'lucide-react'
 
@@ -62,11 +62,11 @@ export default function GBVScreeningPage() {
   async function loadData() {
     setLoading(true)
     try {
-      const pRes = await patientService.getAll()
-      if (pRes.success && pRes.patients) {
-        setPatients(pRes.patients)
+      const patients = await getCachedPatients()
+      if (patients.length) {
+        setPatients(patients)
         const allRecords: GBVScreening[] = []
-        for (const p of pRes.patients.slice(0, 20)) {
+        for (const p of patients.slice(0, 20)) {
           try {
             const gRes = await gbvScreeningService.getByPatient(p.id)
             if (gRes.success && gRes.screenings) allRecords.push(...gRes.screenings)

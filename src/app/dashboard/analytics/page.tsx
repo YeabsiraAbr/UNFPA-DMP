@@ -141,167 +141,27 @@ export default function AnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="patients">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card variant="elevated">
-              <CardHeader>
-                <CardTitle>Patient Demographics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>Age 15-19</span>
-                    <Badge variant="default">12%</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>Age 20-24</span>
-                    <Badge variant="default">28%</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>Age 25-29</span>
-                    <Badge variant="default">32%</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>Age 30-34</span>
-                    <Badge variant="default">18%</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>Age 35+</span>
-                    <Badge variant="warning">10%</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card variant="elevated">
-              <CardHeader>
-                <CardTitle>Gravidity Distribution</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>Primigravida (G1)</span>
-                    <Badge variant="info">24%</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>G2-G3</span>
-                    <Badge variant="success">38%</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>G4-G5</span>
-                    <Badge variant="default">26%</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span>Grand multipara (G6+)</span>
-                    <Badge variant="warning">12%</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card variant="elevated">
+            <CardContent className="py-12 text-center text-slate-500">
+              <p>Patient demographic analytics are not available from the API yet.</p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="clinical">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card variant="elevated">
-              <CardHeader>
-                <CardTitle>ANC Visit Compliance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm text-slate-500">1st Trimester (≥1 visit)</span>
-                      <span className="font-medium">92%</span>
-                    </div>
-                    <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full">
-                      <div className="h-full w-[92%] bg-emerald-500 rounded-full" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm text-slate-500">2nd Trimester (≥2 visits)</span>
-                      <span className="font-medium">78%</span>
-                    </div>
-                    <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full">
-                      <div className="h-full w-[78%] bg-brand-500 rounded-full" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm text-slate-500">3rd Trimester (≥4 visits total)</span>
-                      <span className="font-medium">65%</span>
-                    </div>
-                    <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full">
-                      <div className="h-full w-[65%] bg-amber-500 rounded-full" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm text-slate-500">Complete ANC (8+ visits)</span>
-                      <span className="font-medium">42%</span>
-                    </div>
-                    <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full">
-                      <div className="h-full w-[42%] bg-purple-500 rounded-full" />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card variant="elevated">
-              <CardHeader>
-                <CardTitle>Ultrasound Coverage</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <p className="text-6xl font-bold text-brand-600">68%</p>
-                  <p className="text-slate-500 mt-2">Patients with at least one ultrasound</p>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-center">
-                    <p className="text-2xl font-bold">1,247</p>
-                    <p className="text-xs text-slate-500">Total Scans</p>
-                  </div>
-                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-center">
-                    <p className="text-2xl font-bold">2.1</p>
-                    <p className="text-xs text-slate-500">Avg per Patient</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card variant="elevated">
+            <CardContent className="py-12 text-center text-slate-500">
+              <p>Clinical metrics analytics are not available from the API yet.</p>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="operations">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card variant="elevated" className="lg:col-span-3 lg:max-w-xl">
-              <CardHeader>
-                <CardTitle>Data Sync Health</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-4">
-                  <div className="w-32 h-32 mx-auto rounded-full border-8 border-emerald-500 flex items-center justify-center">
-                    <div>
-                      <p className="text-3xl font-bold text-emerald-600">98%</p>
-                      <p className="text-xs text-slate-500">Sync Rate</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3 mt-6">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span className="text-sm">Pending Uploads</span>
-                    <Badge variant="warning">{stats.syncPendingCount}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span className="text-sm">Conflicts</span>
-                    <Badge variant="danger">1</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span className="text-sm">Last Sync</span>
-                    <span className="text-sm text-slate-500">30 min ago</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <Card variant="elevated">
+            <CardContent className="py-12 text-center text-slate-500">
+              <p>Operations analytics are not available from the API yet.</p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </DashboardLayout>

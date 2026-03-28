@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { deliveryService, patientService } from '@/services'
+import { deliveryService, getCachedPatients } from '@/services'
 import type { Delivery, Patient } from '@/services/types'
 import { Plus, Search, Eye, Pencil, Trash2, Stethoscope } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
@@ -74,11 +74,11 @@ export default function DeliveryPage() {
   async function loadData() {
     setLoading(true)
     try {
-      const pRes = await patientService.getAll()
-      if (pRes.success && pRes.patients) {
-        setPatients(pRes.patients)
+      const patients = await getCachedPatients()
+      if (patients.length) {
+        setPatients(patients)
         const allRecords: Delivery[] = []
-        for (const p of pRes.patients.slice(0, 20)) {
+        for (const p of patients.slice(0, 20)) {
           try {
             const dRes = await deliveryService.getByPatient(p.id)
             if (dRes.success && dRes.deliveries) allRecords.push(...dRes.deliveries)

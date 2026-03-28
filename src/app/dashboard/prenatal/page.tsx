@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -11,7 +11,7 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Modal } from '@/components/ui/Modal'
 import { Progress } from '@/components/ui/Progress'
 import { LoadingState } from '@/components/ui/LoadingState'
-import { patientService, visitService } from '@/services'
+import { getCachedPatients, visitService } from '@/services'
 import type { Patient as ApiPatient, Visit as ApiVisit } from '@/services/types'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
 import {
@@ -47,22 +47,23 @@ function patientFromApi(p: ApiPatient): Patient {
     id: p.id,
     fullName: p.fullName,
     age: p.age ?? 0,
-    dateOfBirth: '',
-    idNumber: p.idNumber ?? p.unfpId ?? '',
+    dateOfBirth: String((p as Record<string, unknown>).dateOfBirth ?? ''),
+    idNumber: p.idNumber ?? '',
+    phoneNumber: String((p as Record<string, unknown>).phoneNumber ?? ''),
     address: p.address ?? '',
-    village: p.subCity ?? p.woreda ?? '',
+    village: String((p as Record<string, unknown>).village ?? ''),
     emergencyContact: p.emergencyContact ?? '',
     emergencyPhone: p.emergencyPhone ?? '',
-    pregnancyStatus: 'pregnant',
-    gravida: 0,
-    para: 0,
-    riskLevel: 'low',
-    riskScore: 0,
-    riskFactors: [],
-    registeredAt: p.createdAt ?? '',
-    assignedMidwife: '',
-    syncStatus: 'synced',
-    clinicId: '',
+    pregnancyStatus: String((p as Record<string, unknown>).pregnancyStatus ?? 'pregnant') as Patient['pregnancyStatus'],
+    gravida: Number((p as Record<string, unknown>).gravida ?? 0),
+    para: Number((p as Record<string, unknown>).para ?? 0),
+    riskLevel: String((p as Record<string, unknown>).riskLevel ?? 'low') as Patient['riskLevel'],
+    riskScore: Number((p as Record<string, unknown>).riskScore ?? 0),
+    riskFactors: ((p as Record<string, unknown>).riskFactors as string[]) ?? [],
+    registeredAt: String((p as Record<string, unknown>).registeredAt ?? (p as Record<string, unknown>).createdAt ?? ''),
+    assignedMidwife: String((p as Record<string, unknown>).assignedMidwife ?? ''),
+    syncStatus: String((p as Record<string, unknown>).syncStatus ?? 'synced') as Patient['syncStatus'],
+    clinicId: String((p as Record<string, unknown>).clinicId ?? ''),
   }
 }
 
@@ -108,52 +109,103 @@ export default function PrenatalCarePage() {
   const [selectedVisit, setSelectedVisit] = useState<PrenatalVisit | null>(null)
   const [showVisitModal, setShowVisitModal] = useState(false)
   const [showNewVisitModal, setShowNewVisitModal] = useState(false)
+  const [newVisitForm, setNewVisitForm] = useState({
+    patientId: '',
+    visitDate: '',
+    bloodPressure: '',
+    temperature: '',
+    weight: '',
+  })
+  const [creatingVisit, setCreatingVisit] = useState(false)
+  const [showEditVisitModal, setShowEditVisitModal] = useState(false)
+  const [editVisitId, setEditVisitId] = useState('')
+  const [editVisitForm, setEditVisitForm] = useState({
+    visitDate: '',
+    bloodPressure: '',
+    temperature: '',
+    weight: '',
+  })
+  const [updatingVisit, setUpdatingVisit] = useState(false)
   const [visits, setVisits] = useState<PrenatalVisit[]>([])
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let cancelled = false
-    async function load() {
-      setLoading(true)
-      try {
-        const res = await patientService.getAll()
-        if (!res.success || !res.patients?.length) {
-          if (!cancelled) {
-            setPatients([])
-            setVisits([])
-          }
-          return
-        }
-        const mappedPatients = res.patients.map(patientFromApi)
-        if (cancelled) return
-        setPatients(mappedPatients)
-        const allVisits: PrenatalVisit[] = []
-        for (const p of res.patients.slice(0, 20)) {
-          try {
-            const vRes = await visitService.getByPatient(p.id)
-            if (vRes.success && vRes.visits?.length) {
-              allVisits.push(...vRes.visits.map(visitToPrenatal))
-            }
-          } catch {
-            /* ignore */
-          }
-        }
-        if (!cancelled) setVisits(allVisits)
-      } catch {
-        if (!cancelled) {
-          setPatients([])
-          setVisits([])
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
+  const loadData = useCallback(async (opts?: { showPageLoading?: boolean }) => {
+    const showPageLoading = opts?.showPageLoading !== false
+    if (showPageLoading) setLoading(true)
+    try {
+      const apiPatients = await getCachedPatients()
+      if (!apiPatients.length) {
+        setPatients([])
+        setVisits([])
+        return
       }
-    }
-    load()
-    return () => {
-      cancelled = true
+      const mappedPatients = apiPatients.map(patientFromApi)
+      setPatients(mappedPatients)
+      const allVisits: PrenatalVisit[] = []
+      for (const p of apiPatients.slice(0, 20)) {
+        try {
+          const vRes = await visitService.getByPatient(p.id)
+          if (vRes.success && vRes.visits?.length) {
+            allVisits.push(...vRes.visits.map(visitToPrenatal))
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      setVisits(allVisits)
+    } catch {
+      setPatients([])
+      setVisits([])
+    } finally {
+      if (showPageLoading) setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  const handleCreateVisit = async () => {
+    if (!newVisitForm.patientId || !newVisitForm.visitDate) return
+    setCreatingVisit(true)
+    try {
+      await visitService.create({
+        patientId: newVisitForm.patientId,
+        visitDate: newVisitForm.visitDate,
+        bloodPressure: newVisitForm.bloodPressure || undefined,
+        temperature: newVisitForm.temperature ? parseFloat(newVisitForm.temperature) : undefined,
+        weight: newVisitForm.weight ? parseFloat(newVisitForm.weight) : undefined,
+      })
+      setShowNewVisitModal(false)
+      setNewVisitForm({ patientId: '', visitDate: '', bloodPressure: '', temperature: '', weight: '' })
+      loadData({ showPageLoading: false })
+    } catch {
+      /* ignore */
+    } finally {
+      setCreatingVisit(false)
+    }
+  }
+
+  const handleEditVisit = async () => {
+    if (!editVisitId) return
+    setUpdatingVisit(true)
+    try {
+      await visitService.update(editVisitId, {
+        visitDate: editVisitForm.visitDate,
+        bloodPressure: editVisitForm.bloodPressure || undefined,
+        temperature: editVisitForm.temperature ? parseFloat(editVisitForm.temperature) : undefined,
+        weight: editVisitForm.weight ? parseFloat(editVisitForm.weight) : undefined,
+      })
+      setShowEditVisitModal(false)
+      setEditVisitId('')
+      loadData({ showPageLoading: false })
+    } catch {
+      /* ignore */
+    } finally {
+      setUpdatingVisit(false)
+    }
+  }
 
   // Mock vitals trend data for chart
   const vitalsTrendData = [
@@ -261,7 +313,7 @@ export default function PrenatalCarePage() {
                 ]}
                 value="all"
               />
-              <Button variant="primary">
+              <Button variant="primary" onClick={() => setShowNewVisitModal(true)}>
                 <Plus className="w-4 h-4" />
                 New Visit
               </Button>
@@ -544,7 +596,30 @@ export default function PrenatalCarePage() {
             )}
 
             <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-              <Button variant="primary">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  if (!selectedVisit) return
+                  const d = new Date(selectedVisit.visitDate)
+                  const pad = (n: number) => String(n).padStart(2, '0')
+                  const localDate =
+                    Number.isNaN(d.getTime())
+                      ? selectedVisit.visitDate.slice(0, 16)
+                      : `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                  const { bloodPressureSystolic: sys, bloodPressureDiastolic: dia } = selectedVisit.vitals
+                  const bp =
+                    sys > 0 || dia > 0 ? `${sys}/${dia}` : ''
+                  setEditVisitId(selectedVisit.id)
+                  setEditVisitForm({
+                    visitDate: localDate,
+                    bloodPressure: bp,
+                    temperature:
+                      selectedVisit.vitals.temperature > 0 ? String(selectedVisit.vitals.temperature) : '',
+                    weight: selectedVisit.vitals.weight > 0 ? String(selectedVisit.vitals.weight) : '',
+                  })
+                  setShowEditVisitModal(true)
+                }}
+              >
                 <FileText className="w-4 h-4" />
                 Edit Visit
               </Button>
@@ -552,6 +627,103 @@ export default function PrenatalCarePage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal isOpen={showNewVisitModal} onClose={() => setShowNewVisitModal(false)} title="New Prenatal Visit" size="md">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <select
+              className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm"
+              value={newVisitForm.patientId}
+              onChange={(e) => setNewVisitForm({ ...newVisitForm, patientId: e.target.value })}
+            >
+              <option value="">Select a patient...</option>
+              {patients.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.fullName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Input
+            label="Visit Date"
+            type="datetime-local"
+            value={newVisitForm.visitDate}
+            onChange={(e) => setNewVisitForm({ ...newVisitForm, visitDate: e.target.value })}
+          />
+          <Input
+            label="Blood Pressure"
+            placeholder="e.g. 120/80"
+            value={newVisitForm.bloodPressure}
+            onChange={(e) => setNewVisitForm({ ...newVisitForm, bloodPressure: e.target.value })}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Temperature (°C)"
+              type="number"
+              step="0.1"
+              value={newVisitForm.temperature}
+              onChange={(e) => setNewVisitForm({ ...newVisitForm, temperature: e.target.value })}
+            />
+            <Input
+              label="Weight (kg)"
+              type="number"
+              step="0.1"
+              value={newVisitForm.weight}
+              onChange={(e) => setNewVisitForm({ ...newVisitForm, weight: e.target.value })}
+            />
+          </div>
+          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="primary" onClick={handleCreateVisit} isLoading={creatingVisit}>
+              Create Visit
+            </Button>
+            <Button variant="ghost" onClick={() => setShowNewVisitModal(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={showEditVisitModal} onClose={() => setShowEditVisitModal(false)} title="Edit Prenatal Visit" size="md">
+        <div className="space-y-4">
+          <Input
+            label="Visit Date"
+            type="datetime-local"
+            value={editVisitForm.visitDate}
+            onChange={(e) => setEditVisitForm({ ...editVisitForm, visitDate: e.target.value })}
+          />
+          <Input
+            label="Blood Pressure"
+            placeholder="e.g. 120/80"
+            value={editVisitForm.bloodPressure}
+            onChange={(e) => setEditVisitForm({ ...editVisitForm, bloodPressure: e.target.value })}
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Temperature (°C)"
+              type="number"
+              step="0.1"
+              value={editVisitForm.temperature}
+              onChange={(e) => setEditVisitForm({ ...editVisitForm, temperature: e.target.value })}
+            />
+            <Input
+              label="Weight (kg)"
+              type="number"
+              step="0.1"
+              value={editVisitForm.weight}
+              onChange={(e) => setEditVisitForm({ ...editVisitForm, weight: e.target.value })}
+            />
+          </div>
+          <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+            <Button variant="primary" onClick={handleEditVisit} isLoading={updatingVisit}>
+              Save Changes
+            </Button>
+            <Button variant="ghost" onClick={() => setShowEditVisitModal(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
       </Modal>
     </DashboardLayout>
   )

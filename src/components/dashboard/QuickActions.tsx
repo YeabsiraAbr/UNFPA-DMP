@@ -27,10 +27,10 @@ const actions = [
     color: 'from-emerald-500 to-emerald-600',
   },
   {
-    name: 'Capture Ultrasound',
-    description: 'Upload scan images',
+    name: 'View Ultrasounds',
+    description: 'Browse scan records',
     icon: ScanLine,
-    href: '/dashboard/ultrasound/new',
+    href: '/dashboard/ultrasound',
     color: 'from-purple-500 to-purple-600',
   },
   {

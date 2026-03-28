@@ -41,7 +41,7 @@ export function HighRiskPatients() {
             return {
               id: hp.patient?.id ?? '',
               fullName: hp.patient?.fullName ?? 'Unknown',
-              idNumber: hp.patient?.idNumber ?? hp.patient?.unfpId ?? '',
+              idNumber: hp.patient?.idNumber ?? '',
               age: hp.patient?.age ?? 0,
               gravida: 0,
               para: 0,

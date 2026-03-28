@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
-import { patientService } from '@/services'
+import { getCachedPatients } from '@/services'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import {
   Building2,
@@ -34,11 +34,12 @@ export default function ClinicsPage() {
   const [clinics, setClinics] = useState<Clinic[]>([])
 
   useEffect(() => {
-    patientService.getAll().then(res => {
-      if (res.success && res.patients?.length) {
+    getCachedPatients().then(patients => {
+      if (patients.length) {
         const facilityMap = new Map<string, number>()
-        res.patients.forEach(p => {
-          if (p.facility) facilityMap.set(p.facility, (facilityMap.get(p.facility) ?? 0) + 1)
+        patients.forEach(p => {
+          const fac = String((p as Record<string, unknown>).clinicName ?? (p as Record<string, unknown>).clinicId ?? '')
+          if (fac) facilityMap.set(fac, (facilityMap.get(fac) ?? 0) + 1)
         })
       }
     }).catch(() => {})

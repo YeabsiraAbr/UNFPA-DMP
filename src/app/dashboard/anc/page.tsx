@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { ancService, patientService } from '@/services'
+import { ancService, getCachedPatients } from '@/services'
 import type { ANCRecord, Patient } from '@/services/types'
 import { Plus, Search, Eye, Pencil, Trash2, Baby } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
@@ -54,11 +54,11 @@ export default function ANCPage() {
   async function loadData() {
     setLoading(true)
     try {
-      const pRes = await patientService.getAll()
-      if (pRes.success && pRes.patients) {
-        setPatients(pRes.patients)
+      const patients = await getCachedPatients()
+      if (patients.length) {
+        setPatients(patients)
         const allRecords: ANCRecord[] = []
-        for (const p of pRes.patients.slice(0, 20)) {
+        for (const p of patients.slice(0, 20)) {
           try {
             const aRes = await ancService.getByPatient(p.id)
             if (aRes.success && aRes.records) allRecords.push(...aRes.records)

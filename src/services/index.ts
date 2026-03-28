@@ -1,6 +1,7 @@
 // API client & helpers
 export { api, ApiError, getAccessToken, getRefreshToken, setTokens, clearTokens } from "./api-client";
 export { cached, clearCache } from "./cache";
+export { getCachedPatients } from "./helpers";
 
 // All types
 export * from "./types";

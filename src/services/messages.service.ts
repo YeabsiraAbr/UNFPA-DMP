@@ -6,36 +6,48 @@ export const messagesService = {
     folder?: "inbox" | "outbox";
     search?: string;
   }): Promise<{ success: boolean; conversations: Conversation[] }> {
-    return api.get("/messages/conversations", { params });
+    const raw = await api.get<Record<string, unknown>>("/messages/conversations", { params });
+    const conversations = (raw.data ?? raw.conversations ?? []) as Conversation[];
+    return { success: true, conversations };
   },
 
   async getOrCreateConversation(otherUserId: string): Promise<{ success: boolean; conversation: Conversation }> {
-    return api.post("/messages/conversations", { body: { otherUserId } });
+    const raw = await api.post<Record<string, unknown>>("/messages/conversations", { body: { otherUserId } });
+    const conversation = (raw.data ?? raw.conversation ?? raw) as Conversation;
+    return { success: true, conversation };
   },
 
   async getConversation(id: string): Promise<{ success: boolean; conversation: Conversation }> {
-    return api.get(`/messages/conversations/${id}`);
+    const raw = await api.get<Record<string, unknown>>(`/messages/conversations/${id}`);
+    const conversation = (raw.data ?? raw.conversation ?? raw) as Conversation;
+    return { success: true, conversation };
   },
 
   async listMessages(conversationId: string, params?: {
     limit?: number;
     offset?: number;
   }): Promise<{ success: boolean; messages: Message[] }> {
-    return api.get(`/messages/conversations/${conversationId}/messages`, { params });
+    const raw = await api.get<Record<string, unknown>>(`/messages/conversations/${conversationId}/messages`, { params });
+    const messages = (raw.data ?? raw.messages ?? []) as Message[];
+    return { success: true, messages };
   },
 
   async sendMessage(conversationId: string, data: {
     body: string;
     attachmentUrl?: string;
   }): Promise<{ success: boolean; message: Message }> {
-    return api.post(`/messages/conversations/${conversationId}/messages`, { body: data });
+    const raw = await api.post<Record<string, unknown>>(`/messages/conversations/${conversationId}/messages`, { body: data });
+    const message = (raw.data ?? raw.message ?? raw) as Message;
+    return { success: true, message };
   },
 
   async markConversationRead(conversationId: string): Promise<SuccessResponse> {
-    return api.patch(`/messages/conversations/${conversationId}/read`);
+    await api.patch(`/messages/conversations/${conversationId}/read`);
+    return { success: true };
   },
 
   async markMessageRead(messageId: string): Promise<SuccessResponse> {
-    return api.patch(`/messages/messages/${messageId}/read`);
+    await api.patch(`/messages/messages/${messageId}/read`);
+    return { success: true };
   },
 };

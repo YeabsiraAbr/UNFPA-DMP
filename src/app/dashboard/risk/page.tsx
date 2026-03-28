@@ -28,27 +28,28 @@ import {
 import type { Patient } from '@/lib/types'
 
 function patientFromHighRisk(hp: HighRiskPatient): Patient {
-  const p = hp.patient
+  const p = hp.patient as Record<string, unknown>
   return {
-    id: p.id,
-    fullName: p.fullName ?? 'Unknown',
-    age: p.age ?? 0,
-    dateOfBirth: '',
-    idNumber: p.idNumber ?? p.unfpId ?? '',
-    address: p.address ?? '',
-    village: p.subCity ?? p.woreda ?? '',
-    emergencyContact: p.emergencyContact ?? '',
-    emergencyPhone: p.emergencyPhone ?? '',
-    pregnancyStatus: 'pregnant',
-    gravida: 0,
-    para: 0,
-    riskLevel: 'high',
-    riskScore: 80,
-    riskFactors: hp.riskFactors ?? [],
-    registeredAt: p.createdAt ?? '',
-    assignedMidwife: '',
-    syncStatus: 'synced',
-    clinicId: '',
+    id: String(p.id ?? ''),
+    fullName: String(p.fullName ?? 'Unknown'),
+    age: Number(p.age ?? 0),
+    dateOfBirth: String(p.dateOfBirth ?? ''),
+    idNumber: String(p.idNumber ?? ''),
+    phoneNumber: String(p.phoneNumber ?? ''),
+    address: String(p.address ?? ''),
+    village: String(p.village ?? ''),
+    emergencyContact: String(p.emergencyContact ?? ''),
+    emergencyPhone: String(p.emergencyPhone ?? ''),
+    pregnancyStatus: String(p.pregnancyStatus ?? 'pregnant') as Patient['pregnancyStatus'],
+    gravida: Number(p.gravida ?? 0),
+    para: Number(p.para ?? 0),
+    riskLevel: String(p.riskLevel ?? 'high') as Patient['riskLevel'],
+    riskScore: Number(p.riskScore ?? 80),
+    riskFactors: (hp.riskFactors ?? []) as string[],
+    registeredAt: String(p.registeredAt ?? p.createdAt ?? ''),
+    assignedMidwife: String(p.assignedMidwife ?? ''),
+    syncStatus: String(p.syncStatus ?? 'synced') as Patient['syncStatus'],
+    clinicId: String(p.clinicId ?? ''),
   }
 }
 

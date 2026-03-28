@@ -42,27 +42,15 @@ const clinicSyncList: Array<{
   patientCount: number
 }> = []
 
-// Mock sync queue items
-const syncQueue = [
-  { id: 's1', type: 'patient', action: 'create', patientName: 'New Patient Record', status: 'pending', timestamp: new Date(Date.now() - 300000).toISOString() },
-  { id: 's2', type: 'visit', action: 'update', patientName: 'Halima Abdi Omar', status: 'pending', timestamp: new Date(Date.now() - 600000).toISOString() },
-  { id: 's3', type: 'ultrasound', action: 'create', patientName: 'Khadija Ibrahim Hassan', status: 'uploading', progress: 67, timestamp: new Date(Date.now() - 900000).toISOString() },
-  { id: 's4', type: 'visit', action: 'update', patientName: 'Zahra Ahmed Nur', status: 'pending', timestamp: new Date(Date.now() - 1200000).toISOString() },
-]
+const syncQueue: Array<{
+  id: string; type: string; action: string; patientName: string;
+  status: string; progress?: number; timestamp: string;
+}> = []
 
-// Mock sync conflicts
-const syncConflicts = [
-  {
-    id: 'c1',
-    patientId: 'p3',
-    patientName: 'Khadija Ibrahim Hassan',
-    field: 'Blood Pressure',
-    localValue: '135/88',
-    serverValue: '130/85',
-    localTimestamp: new Date(Date.now() - 3600000).toISOString(),
-    serverTimestamp: new Date(Date.now() - 7200000).toISOString(),
-  },
-]
+const syncConflicts: Array<{
+  id: string; patientId: string; patientName: string; field: string;
+  localValue: string; serverValue: string; localTimestamp: string; serverTimestamp: string;
+}> = []
 
 export default function SyncStatusPage() {
   const [isSyncing, setIsSyncing] = useState(false)
@@ -181,7 +169,7 @@ export default function SyncStatusPage() {
               <CheckCircle className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold">98%</p>
+              <p className="text-2xl font-bold">—</p>
               <p className="text-sm text-slate-500">Sync Rate</p>
             </div>
           </div>
@@ -340,34 +328,8 @@ export default function SyncStatusPage() {
               <CardTitle>Storage Info</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm text-slate-500">Local Database</span>
-                    <span className="text-sm font-medium">245 MB</span>
-                  </div>
-                  <Progress value={24} size="sm" />
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm text-slate-500">Ultrasound Images</span>
-                    <span className="text-sm font-medium">1.2 GB</span>
-                  </div>
-                  <Progress value={60} size="sm" variant="warning" />
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm text-slate-500">Sync Cache</span>
-                    <span className="text-sm font-medium">89 MB</span>
-                  </div>
-                  <Progress value={9} size="sm" />
-                </div>
-                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-slate-500">Total Used</span>
-                    <span className="font-semibold">1.53 GB / 8 GB</span>
-                  </div>
-                </div>
+              <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                <p>Storage information is not available from the API yet.</p>
               </div>
             </CardContent>
           </Card>

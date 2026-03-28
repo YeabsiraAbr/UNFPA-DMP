@@ -88,40 +88,43 @@ export interface User {
 export interface Patient {
   id: string;
   fullName: string;
-  unfpId: string;
-  cardNo: string | null;
-  phone: string | null;
-  email: string | null;
   age: number | null;
-  address: string | null;
-  subCity: string | null;
-  woreda: string | null;
-  kebele: string | null;
-  houseNo: string | null;
-  facility: string | null;
-  maritalStatus: string | null;
-  idNumber: string | null;
-  emergencyContact: string | null;
-  emergencyPhone?: string | null;
-  createdAt: string;
+  dateOfBirth: string;
+  idNumber: string;
+  phoneNumber?: string | null;
+  address: string;
+  village: string;
+  emergencyContact: string;
+  emergencyPhone: string;
+  pregnancyStatus: string;
+  gravida: number;
+  para: number;
+  riskLevel: string;
+  riskScore: number;
+  riskFactors: string[];
+  registeredAt: string;
+  assignedMidwife: string;
+  assignedMidwifeId?: string;
+  syncStatus: string;
+  clinicId: string;
+  clinicName?: string;
+  [key: string]: unknown;
 }
 
 export interface CreatePatientRequest {
   fullName: string;
-  cardNo?: string;
-  phone?: string;
-  email?: string;
   age?: number;
+  dateOfBirth?: string;
+  phoneNumber?: string;
   address?: string;
-  subCity?: string;
-  woreda?: string;
-  kebele?: string;
-  houseNo?: string;
-  facility?: string;
-  maritalStatus?: string;
-  idNumber?: string;
+  village?: string;
   emergencyContact?: string;
   emergencyPhone?: string;
+  pregnancyStatus?: string;
+  gravida?: number;
+  para?: number;
+  riskLevel?: string;
+  idNumber?: string;
 }
 
 export type UpdatePatientRequest = Partial<CreatePatientRequest>;

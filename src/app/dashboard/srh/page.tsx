@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { srhService, patientService } from '@/services'
+import { srhService, getCachedPatients } from '@/services'
 import type { SRHRegistration, Patient } from '@/services/types'
 import { Plus, Search, Eye, Pencil, Trash2, Heart } from 'lucide-react'
 
@@ -61,11 +61,11 @@ export default function SRHPage() {
   async function loadData() {
     setLoading(true)
     try {
-      const pRes = await patientService.getAll()
-      if (pRes.success && pRes.patients) {
-        setPatients(pRes.patients)
+      const patients = await getCachedPatients()
+      if (patients.length) {
+        setPatients(patients)
         const allRecords: SRHRegistration[] = []
-        for (const p of pRes.patients.slice(0, 20)) {
+        for (const p of patients.slice(0, 20)) {
           try {
             const sRes = await srhService.getByPatient(p.id)
             if (sRes.success && sRes.registrations) allRecords.push(...sRes.registrations)

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { pncService, patientService } from '@/services'
+import { pncService, getCachedPatients } from '@/services'
 import type { PNCVisit, Patient } from '@/services/types'
 import { Plus, Search, Eye, Pencil, Trash2, HeartPulse } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
@@ -52,11 +52,11 @@ export default function PNCPage() {
   async function loadData() {
     setLoading(true)
     try {
-      const pRes = await patientService.getAll()
-      if (pRes.success && pRes.patients) {
-        setPatients(pRes.patients)
+      const patients = await getCachedPatients()
+      if (patients.length) {
+        setPatients(patients)
         const allVisits: PNCVisit[] = []
-        for (const p of pRes.patients.slice(0, 20)) {
+        for (const p of patients.slice(0, 20)) {
           try {
             const vRes = await pncService.getByPatient(p.id)
             if (vRes.success && vRes.visits) allVisits.push(...vRes.visits)

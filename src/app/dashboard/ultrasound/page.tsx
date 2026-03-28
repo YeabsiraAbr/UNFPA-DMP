@@ -8,11 +8,10 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
-import { ultrasoundService, patientService } from "@/services";
+import { ultrasoundService, getCachedPatients } from "@/services";
 import { formatDate, cn } from "@/lib/utils";
 import {
   Search,
-  Upload,
   Grid,
   List,
   Image as ImageIcon,
@@ -87,19 +86,6 @@ export default function UltrasoundPage() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [ultrasounds, setUltrasounds] = useState<UltrasoundImage[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadForm, setUploadForm] = useState<{
-    patientId: string;
-    image: File | null;
-    description: string;
-    gestationalAge: number | "";
-  }>({
-    patientId: "",
-    image: null,
-    description: "",
-    gestationalAge: "",
-  });
-  const [uploading, setUploading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{
@@ -134,31 +120,30 @@ export default function UltrasoundPage() {
 
   useEffect(() => {
     let cancelled = false;
-    patientService
-      .getAll()
-      .then(async (res) => {
-        if (!res.success || !res.patients?.length) return;
-        const pList = res.patients;
-        const mapped = pList.map((p) => ({
+    getCachedPatients()
+      .then(async (patients) => {
+        if (!patients.length) return;
+        const mapped = patients.map((p) => ({
           id: p.id,
           fullName: p.fullName,
           age: p.age ?? 0,
-          dateOfBirth: "",
-          idNumber: p.idNumber ?? p.unfpId ?? "",
+          dateOfBirth: String((p as Record<string, unknown>).dateOfBirth ?? ""),
+          idNumber: p.idNumber ?? "",
+          phoneNumber: String((p as Record<string, unknown>).phoneNumber ?? ""),
           address: p.address ?? "",
-          village: p.subCity ?? p.woreda ?? "",
+          village: String((p as Record<string, unknown>).village ?? ""),
           emergencyContact: p.emergencyContact ?? "",
           emergencyPhone: p.emergencyPhone ?? "",
-          pregnancyStatus: "pregnant" as const,
-          gravida: 0,
-          para: 0,
-          riskLevel: "low" as const,
-          riskScore: 0,
-          riskFactors: [] as string[],
-          registeredAt: p.createdAt ?? "",
-          assignedMidwife: "",
-          syncStatus: "synced" as const,
-          clinicId: "",
+          pregnancyStatus: String((p as Record<string, unknown>).pregnancyStatus ?? "pregnant") as "pregnant",
+          gravida: Number((p as Record<string, unknown>).gravida ?? 0),
+          para: Number((p as Record<string, unknown>).para ?? 0),
+          riskLevel: String((p as Record<string, unknown>).riskLevel ?? "low") as "low",
+          riskScore: Number((p as Record<string, unknown>).riskScore ?? 0),
+          riskFactors: ((p as Record<string, unknown>).riskFactors as string[]) ?? [],
+          registeredAt: String((p as Record<string, unknown>).registeredAt ?? ""),
+          assignedMidwife: String((p as Record<string, unknown>).assignedMidwife ?? ""),
+          syncStatus: String((p as Record<string, unknown>).syncStatus ?? "synced") as "synced",
+          clinicId: String((p as Record<string, unknown>).clinicId ?? ""),
         }));
         if (cancelled) return;
         setPatients(mapped);
@@ -169,34 +154,6 @@ export default function UltrasoundPage() {
       cancelled = true;
     };
   }, []);
-
-  const handleUpload = async () => {
-    if (!uploadForm.patientId || !uploadForm.image) return;
-    setUploading(true);
-    try {
-      const res = await ultrasoundService.create({
-        patientId: uploadForm.patientId,
-        image: uploadForm.image,
-        description: uploadForm.description.trim() || undefined,
-        gestationalAge:
-          uploadForm.gestationalAge === ""
-            ? undefined
-            : Number(uploadForm.gestationalAge),
-      });
-      if (res.success) {
-        setShowUploadModal(false);
-        setUploadForm({
-          patientId: patients[0]?.id ?? "",
-          image: null,
-          description: "",
-          gestationalAge: "",
-        });
-        await loadScansForPatients(patients);
-      }
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleEdit = async () => {
     if (!editId) return;
@@ -397,21 +354,6 @@ export default function UltrasoundPage() {
                 <List className="w-4 h-4" />
               </button>
             </div>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setUploadForm({
-                  patientId: patients[0]?.id ?? "",
-                  image: null,
-                  description: "",
-                  gestationalAge: "",
-                });
-                setShowUploadModal(true);
-              }}
-            >
-              <Upload className="w-4 h-4" />
-              Upload Scan
-            </Button>
           </div>
         </div>
       </Card>
@@ -796,89 +738,6 @@ export default function UltrasoundPage() {
             </div>
           </div>
         )}
-      </Modal>
-
-      <Modal
-        isOpen={showUploadModal}
-        onClose={() => setShowUploadModal(false)}
-        title="Upload scan"
-        description="Select a patient, attach an image, and add details."
-        size="lg"
-      >
-        <div className="space-y-4">
-          <Select
-            label="Patient"
-            options={patients.map((p) => ({
-              value: p.id,
-              label: p.fullName,
-            }))}
-            value={uploadForm.patientId}
-            onChange={(e) =>
-              setUploadForm((f) => ({ ...f, patientId: e.target.value }))
-            }
-            placeholder="Select patient"
-          />
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              Image
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              className="block w-full text-sm text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 dark:file:bg-brand-900/40 dark:file:text-brand-200"
-              onChange={(e) =>
-                setUploadForm((f) => ({
-                  ...f,
-                  image: e.target.files?.[0] ?? null,
-                }))
-              }
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              Description
-            </label>
-            <textarea
-              className="w-full min-h-[100px] rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              placeholder="Findings or notes"
-              value={uploadForm.description}
-              onChange={(e) =>
-                setUploadForm((f) => ({ ...f, description: e.target.value }))
-              }
-            />
-          </div>
-          <Input
-            label="Gestational age (weeks)"
-            type="number"
-            min={0}
-            value={uploadForm.gestationalAge === "" ? "" : uploadForm.gestationalAge}
-            onChange={(e) => {
-              const v = e.target.value;
-              setUploadForm((f) => ({
-                ...f,
-                gestationalAge: v === "" ? "" : Number(v),
-              }));
-            }}
-          />
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowUploadModal(false)}
-              disabled={uploading}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleUpload}
-              disabled={
-                uploading || !uploadForm.patientId || !uploadForm.image
-              }
-            >
-              {uploading ? "Uploading…" : "Submit"}
-            </Button>
-          </div>
-        </div>
       </Modal>
 
       <Modal

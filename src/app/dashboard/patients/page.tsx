@@ -12,7 +12,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Progress } from '@/components/ui/Progress'
-import { patientService, visitService } from '@/services'
+import { patientService, visitService, getCachedPatients, clearCache } from '@/services'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
 import {
@@ -35,6 +35,7 @@ import {
   User,
   Clock,
   Trash2,
+  ClipboardList,
 } from 'lucide-react'
 import type { Patient } from '@/lib/types'
 
@@ -58,35 +59,37 @@ export default function PatientsPage() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [showPatientModal, setShowPatientModal] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showRegisterModal, setShowRegisterModal] = useState(false)
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadPatients = () => {
     setLoading(true)
+    clearCache('patients-list')
     patientService.getAll().then((res) => {
       if (res.success && res.patients?.length) {
         setPatients(
-          res.patients.map((p) => ({
-            id: p.id,
-            fullName: p.fullName,
-            age: p.age ?? 0,
-            dateOfBirth: '',
-            idNumber: p.idNumber ?? (p as any).unfpId ?? '',
-            phoneNumber: p.phone ?? undefined,
-            address: p.address ?? '',
-            village: p.woreda ?? '',
-            emergencyContact: p.emergencyContact ?? '',
-            emergencyPhone: p.emergencyPhone ?? '',
-            pregnancyStatus: 'pregnant' as const,
-            gravida: 0,
-            para: 0,
-            riskLevel: 'low' as const,
-            riskScore: 0,
-            riskFactors: [],
-            registeredAt: p.createdAt,
-            assignedMidwife: '',
-            syncStatus: 'synced' as const,
-            clinicId: p.facility ?? '',
+          res.patients.map((p: Record<string, unknown>) => ({
+            id: String(p.id ?? ''),
+            fullName: String(p.fullName ?? ''),
+            age: Number(p.age ?? 0),
+            dateOfBirth: String(p.dateOfBirth ?? ''),
+            idNumber: String(p.idNumber ?? ''),
+            phoneNumber: p.phoneNumber ? String(p.phoneNumber) : undefined,
+            address: String(p.address ?? ''),
+            village: String(p.village ?? ''),
+            emergencyContact: String(p.emergencyContact ?? ''),
+            emergencyPhone: String(p.emergencyPhone ?? ''),
+            pregnancyStatus: (p.pregnancyStatus as Patient['pregnancyStatus']) ?? 'pregnant',
+            gravida: Number(p.gravida ?? 0),
+            para: Number(p.para ?? 0),
+            riskLevel: (p.riskLevel as Patient['riskLevel']) ?? 'low',
+            riskScore: Number(p.riskScore ?? 0),
+            riskFactors: (p.riskFactors as string[]) ?? [],
+            registeredAt: String(p.registeredAt ?? p.createdAt ?? ''),
+            assignedMidwife: String(p.assignedMidwife ?? ''),
+            syncStatus: (p.syncStatus as Patient['syncStatus']) ?? 'synced',
+            clinicId: String(p.clinicId ?? ''),
           }))
         )
       }
@@ -111,23 +114,36 @@ export default function PatientsPage() {
 
   const [createForm, setCreateForm] = useState({
     fullName: '',
-    phone: '',
+    phoneNumber: '',
     age: '',
     address: '',
-    subCity: '',
-    woreda: '',
-    kebele: '',
-    houseNo: '',
-    facility: '',
-    maritalStatus: '',
+    village: '',
     idNumber: '',
     emergencyContact: '',
     emergencyPhone: '',
   })
   const [creating, setCreating] = useState(false)
+  const [registerForm, setRegisterForm] = useState({
+    fullName: '',
+    phoneNumber: '',
+    age: '',
+    address: '',
+    village: '',
+    idNumber: '',
+    emergencyContact: '',
+    emergencyPhone: '',
+    lmp: '',
+    edd: '',
+    gravida: '',
+    para: '',
+    hiv: '',
+    bloodGroupRh: '',
+    diabetesMellitus: false,
+  })
+  const [registering, setRegistering] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
-  const [editForm, setEditForm] = useState({ fullName: '', phone: '', age: '', address: '', woreda: '', emergencyContact: '', emergencyPhone: '' })
+  const [editForm, setEditForm] = useState({ fullName: '', phoneNumber: '', age: '', address: '', village: '', emergencyContact: '', emergencyPhone: '' })
   const [scheduleForm, setScheduleForm] = useState({ visitDate: '', bloodPressure: '', temperature: '', weight: '' })
   const [editing, setEditing] = useState(false)
   const [scheduling, setScheduling] = useState(false)
@@ -142,22 +158,17 @@ export default function PatientsPage() {
     try {
       const res = await patientService.create({
         fullName: createForm.fullName,
-        phone: createForm.phone || undefined,
+        phoneNumber: createForm.phoneNumber || undefined,
         age: createForm.age ? parseInt(createForm.age) : undefined,
         address: createForm.address || undefined,
-        subCity: createForm.subCity || undefined,
-        woreda: createForm.woreda || undefined,
-        kebele: createForm.kebele || undefined,
-        houseNo: createForm.houseNo || undefined,
-        facility: createForm.facility || undefined,
-        maritalStatus: createForm.maritalStatus || undefined,
+        village: createForm.village || undefined,
         idNumber: createForm.idNumber || undefined,
         emergencyContact: createForm.emergencyContact || undefined,
         emergencyPhone: createForm.emergencyPhone || undefined,
       })
       if (res.success) {
         setShowCreateModal(false)
-        setCreateForm({ fullName: '', phone: '', age: '', address: '', subCity: '', woreda: '', kebele: '', houseNo: '', facility: '', maritalStatus: '', idNumber: '', emergencyContact: '', emergencyPhone: '' })
+        setCreateForm({ fullName: '', phoneNumber: '', age: '', address: '', village: '', idNumber: '', emergencyContact: '', emergencyPhone: '' })
         loadPatients()
       }
     } catch {
@@ -167,16 +178,68 @@ export default function PatientsPage() {
     }
   }
 
+  const resetRegisterForm = () =>
+    setRegisterForm({
+      fullName: '',
+      phoneNumber: '',
+      age: '',
+      address: '',
+      village: '',
+      idNumber: '',
+      emergencyContact: '',
+      emergencyPhone: '',
+      lmp: '',
+      edd: '',
+      gravida: '',
+      para: '',
+      hiv: '',
+      bloodGroupRh: '',
+      diabetesMellitus: false,
+    })
+
+  const handleRegisterClient = async () => {
+    if (!registerForm.fullName.trim()) return
+    setRegistering(true)
+    try {
+      const res = await patientService.registerClient({
+        fullName: registerForm.fullName,
+        phoneNumber: registerForm.phoneNumber || undefined,
+        age: registerForm.age ? parseInt(registerForm.age, 10) : undefined,
+        address: registerForm.address || undefined,
+        village: registerForm.village || undefined,
+        idNumber: registerForm.idNumber || undefined,
+        emergencyContact: registerForm.emergencyContact || undefined,
+        emergencyPhone: registerForm.emergencyPhone || undefined,
+        lmp: registerForm.lmp || undefined,
+        edd: registerForm.edd || undefined,
+        gravida: registerForm.gravida ? parseInt(registerForm.gravida, 10) : undefined,
+        para: registerForm.para ? parseInt(registerForm.para, 10) : undefined,
+        hiv: registerForm.hiv || undefined,
+        bloodGroupRh: registerForm.bloodGroupRh || undefined,
+        diabetesMellitus: registerForm.diabetesMellitus,
+      })
+      if (res.success) {
+        setShowRegisterModal(false)
+        resetRegisterForm()
+        loadPatients()
+      }
+    } catch {
+      // handled silently
+    } finally {
+      setRegistering(false)
+    }
+  }
+
   const handleEditPatient = async () => {
     if (!selectedPatient || !editForm.fullName.trim()) return
     setEditing(true)
     try {
       await patientService.update(selectedPatient.id, {
         fullName: editForm.fullName,
-        phone: editForm.phone || undefined,
+        phoneNumber: editForm.phoneNumber || undefined,
         age: editForm.age ? parseInt(editForm.age) : undefined,
         address: editForm.address || undefined,
-        woreda: editForm.woreda || undefined,
+        village: editForm.village || undefined,
         emergencyContact: editForm.emergencyContact || undefined,
         emergencyPhone: editForm.emergencyPhone || undefined,
       })
@@ -252,10 +315,10 @@ export default function PatientsPage() {
     if (!selectedPatient) return
     setEditForm({
       fullName: selectedPatient.fullName,
-      phone: selectedPatient.phoneNumber || '',
+      phoneNumber: selectedPatient.phoneNumber || '',
       age: String(selectedPatient.age),
       address: selectedPatient.address,
-      woreda: selectedPatient.village,
+      village: selectedPatient.village,
       emergencyContact: selectedPatient.emergencyContact,
       emergencyPhone: selectedPatient.emergencyPhone,
     })
@@ -358,6 +421,10 @@ export default function PatientsPage() {
               <Button variant="primary" size="md" onClick={() => setShowCreateModal(true)}>
                 <Plus className="w-4 h-4" />
                 New Patient
+              </Button>
+              <Button variant="outline" size="md" onClick={() => setShowRegisterModal(true)}>
+                <ClipboardList className="w-4 h-4" />
+                Register Client (ANC)
               </Button>
             </div>
           </div>
@@ -790,11 +857,11 @@ export default function PatientsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
               <Input
                 placeholder="Phone number"
-                value={createForm.phone}
-                onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                value={createForm.phoneNumber}
+                onChange={(e) => setCreateForm({ ...createForm, phoneNumber: e.target.value })}
               />
             </div>
             <div>
@@ -815,57 +882,11 @@ export default function PatientsPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sub City</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Village / Woreda</label>
               <Input
-                placeholder="Sub city"
-                value={createForm.subCity}
-                onChange={(e) => setCreateForm({ ...createForm, subCity: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Woreda</label>
-              <Input
-                placeholder="Woreda"
-                value={createForm.woreda}
-                onChange={(e) => setCreateForm({ ...createForm, woreda: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kebele</label>
-              <Input
-                placeholder="Kebele"
-                value={createForm.kebele}
-                onChange={(e) => setCreateForm({ ...createForm, kebele: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">House No</label>
-              <Input
-                placeholder="House number"
-                value={createForm.houseNo}
-                onChange={(e) => setCreateForm({ ...createForm, houseNo: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Facility</label>
-              <Input
-                placeholder="Facility"
-                value={createForm.facility}
-                onChange={(e) => setCreateForm({ ...createForm, facility: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Marital Status</label>
-              <Select
-                options={[
-                  { value: '', label: 'Select...' },
-                  { value: 'single', label: 'Single' },
-                  { value: 'married', label: 'Married' },
-                  { value: 'divorced', label: 'Divorced' },
-                  { value: 'widowed', label: 'Widowed' },
-                ]}
-                value={createForm.maritalStatus}
-                onChange={(e) => setCreateForm({ ...createForm, maritalStatus: e.target.value })}
+                placeholder="Village or woreda"
+                value={createForm.village}
+                onChange={(e) => setCreateForm({ ...createForm, village: e.target.value })}
               />
             </div>
             <div>
@@ -913,11 +934,11 @@ export default function PatientsPage() {
         <div className="space-y-4">
           <Input label="Full Name" value={editForm.fullName} onChange={e => setEditForm({ ...editForm, fullName: e.target.value })} />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Phone" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} />
+            <Input label="Phone Number" value={editForm.phoneNumber} onChange={e => setEditForm({ ...editForm, phoneNumber: e.target.value })} />
             <Input label="Age" type="number" value={editForm.age} onChange={e => setEditForm({ ...editForm, age: e.target.value })} />
           </div>
           <Input label="Address" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} />
-          <Input label="Woreda" value={editForm.woreda} onChange={e => setEditForm({ ...editForm, woreda: e.target.value })} />
+          <Input label="Village / Woreda" value={editForm.village} onChange={e => setEditForm({ ...editForm, village: e.target.value })} />
           <div className="grid grid-cols-2 gap-4">
             <Input label="Emergency Contact" value={editForm.emergencyContact} onChange={e => setEditForm({ ...editForm, emergencyContact: e.target.value })} />
             <Input label="Emergency Phone" value={editForm.emergencyPhone} onChange={e => setEditForm({ ...editForm, emergencyPhone: e.target.value })} />
@@ -957,6 +978,173 @@ export default function PatientsPage() {
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
             <Button variant="primary" onClick={handleEditVisit} isLoading={editingVisit}>Save Changes</Button>
             <Button variant="ghost" onClick={() => setShowEditVisitModal(false)}>Cancel</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Register Client (ANC) Modal */}
+      <Modal
+        isOpen={showRegisterModal}
+        onClose={() => setShowRegisterModal(false)}
+        title="Register Client (ANC)"
+        description="Creates a patient record and ANC registration in one step."
+        size="xl"
+      >
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
+          <div>
+            <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Personal Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <Input
+                  placeholder="Enter full name"
+                  value={registerForm.fullName}
+                  onChange={(e) => setRegisterForm({ ...registerForm, fullName: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
+                <Input
+                  placeholder="Phone number"
+                  value={registerForm.phoneNumber}
+                  onChange={(e) => setRegisterForm({ ...registerForm, phoneNumber: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Age</label>
+                <Input
+                  type="number"
+                  placeholder="Age"
+                  value={registerForm.age}
+                  onChange={(e) => setRegisterForm({ ...registerForm, age: e.target.value })}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Address</label>
+                <Input
+                  placeholder="Address"
+                  value={registerForm.address}
+                  onChange={(e) => setRegisterForm({ ...registerForm, address: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Village / Woreda</label>
+                <Input
+                  placeholder="Village or woreda"
+                  value={registerForm.village}
+                  onChange={(e) => setRegisterForm({ ...registerForm, village: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ID Number</label>
+                <Input
+                  placeholder="ID number"
+                  value={registerForm.idNumber}
+                  onChange={(e) => setRegisterForm({ ...registerForm, idNumber: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Emergency Contact</label>
+                <Input
+                  placeholder="Emergency contact name"
+                  value={registerForm.emergencyContact}
+                  onChange={(e) => setRegisterForm({ ...registerForm, emergencyContact: e.target.value })}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Emergency Phone</label>
+                <Input
+                  placeholder="Emergency phone number"
+                  value={registerForm.emergencyPhone}
+                  onChange={(e) => setRegisterForm({ ...registerForm, emergencyPhone: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+            <h4 className="font-semibold text-slate-900 dark:text-white mb-3">ANC Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">LMP</label>
+                <Input
+                  type="date"
+                  value={registerForm.lmp}
+                  onChange={(e) => setRegisterForm({ ...registerForm, lmp: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">EDD</label>
+                <Input
+                  type="date"
+                  value={registerForm.edd}
+                  onChange={(e) => setRegisterForm({ ...registerForm, edd: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Gravida</label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="Gravida"
+                  value={registerForm.gravida}
+                  onChange={(e) => setRegisterForm({ ...registerForm, gravida: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Para</label>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="Para"
+                  value={registerForm.para}
+                  onChange={(e) => setRegisterForm({ ...registerForm, para: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">HIV</label>
+                <Input
+                  placeholder="e.g. negative, positive, unknown"
+                  value={registerForm.hiv}
+                  onChange={(e) => setRegisterForm({ ...registerForm, hiv: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Blood group / Rh</label>
+                <Input
+                  placeholder="e.g. O+"
+                  value={registerForm.bloodGroupRh}
+                  onChange={(e) => setRegisterForm({ ...registerForm, bloodGroupRh: e.target.value })}
+                />
+              </div>
+              <div className="md:col-span-2 flex items-center gap-2 pt-1">
+                <input
+                  id="register-diabetes"
+                  type="checkbox"
+                  className="rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+                  checked={registerForm.diabetesMellitus}
+                  onChange={(e) => setRegisterForm({ ...registerForm, diabetesMellitus: e.target.checked })}
+                />
+                <label htmlFor="register-diabetes" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Diabetes mellitus
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700 sticky bottom-0 bg-white dark:bg-slate-900 pb-1">
+            <Button variant="outline" onClick={() => setShowRegisterModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleRegisterClient}
+              disabled={!registerForm.fullName.trim() || registering}
+            >
+              {registering ? 'Registering...' : 'Register Client'}
+            </Button>
           </div>
         </div>
       </Modal>
