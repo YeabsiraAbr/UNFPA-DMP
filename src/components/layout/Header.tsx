@@ -16,7 +16,8 @@ import {
 import { Badge } from '../ui/Badge'
 import { Input } from '../ui/Input'
 import { Avatar } from '../ui/Avatar'
-import { profileService } from '@/services'
+import { useRouter } from 'next/navigation'
+import { profileService, clearCache } from '@/services'
 
 const fallbackUser = {
   id: '',
@@ -44,8 +45,10 @@ interface HeaderProps {
 }
 
 export function Header({ title, subtitle }: HeaderProps) {
+  const router = useRouter()
   const { t, locale, setLocale } = useTranslation()
   const [isDark, setIsDark] = useState(false)
+  const [cacheRefreshing, setCacheRefreshing] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showLangMenu, setShowLangMenu] = useState(false)
   const langRef = useRef<HTMLDivElement>(null)
@@ -142,9 +145,19 @@ export function Header({ title, subtitle }: HeaderProps) {
               )}
             </div>
 
-            {/* Sync Button */}
-            <button className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors">
-              <RefreshCcw className="w-5 h-5" />
+            {/* Clear in-memory API cache + refresh Next.js server tree */}
+            <button
+              type="button"
+              title={t('header.refreshCache')}
+              onClick={() => {
+                setCacheRefreshing(true)
+                clearCache()
+                router.refresh()
+                window.setTimeout(() => setCacheRefreshing(false), 600)
+              }}
+              className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 transition-colors"
+            >
+              <RefreshCcw className={cn('w-5 h-5', cacheRefreshing && 'animate-spin')} />
             </button>
 
             {/* Language Switcher */}

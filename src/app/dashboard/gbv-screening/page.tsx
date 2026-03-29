@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { gbvScreeningService, getCachedPatients } from '@/services'
+import { gbvScreeningService, getCachedPatients, clearCache } from '@/services'
+import { downloadCsv } from '@/lib/download'
 import type { GBVScreening, Patient } from '@/services/types'
-import { Plus, Search, Eye, Pencil, Trash2, ShieldAlert, Lock } from 'lucide-react'
+import { Plus, Search, Eye, Pencil, Trash2, ShieldAlert, Lock, RefreshCcw, Download } from 'lucide-react'
 
 export default function GBVScreeningPage() {
   const [records, setRecords] = useState<GBVScreening[]>([])
@@ -222,9 +223,28 @@ export default function GBVScreeningPage() {
         <div className="w-full sm:w-80">
           <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4" /> New GBV Screening
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => { clearCache('patients-list'); loadData() }} disabled={loading}>
+            <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!filtered.length}
+            onClick={() => {
+              const rows: Record<string, unknown>[] = filtered.map((r) => ({
+                ...(JSON.parse(JSON.stringify(r)) as Record<string, unknown>),
+                patientName: getPatientName(r.patientId),
+              }))
+              downloadCsv(`gbv-screening-${new Date().toISOString().slice(0, 10)}.csv`, rows)
+            }}
+          >
+            <Download className="w-4 h-4" /> Export
+          </Button>
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4" /> New GBV Screening
+          </Button>
+        </div>
       </div>
 
       {loading ? (

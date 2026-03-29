@@ -161,6 +161,7 @@ const so: TranslationKeys = {
     unreadAlerts: "Digniinahalama-akhrinin",
     viewAllNotifications: "eegDhammaanOgeysiisyada",
     language: "Luuqad",
+    refreshCache: "",
   },
 
   // -------------------------------------------------------------------------

@@ -34,6 +34,7 @@ import {
   Stethoscope,
   ArrowRight,
   Eye,
+  RefreshCcw,
 } from 'lucide-react'
 import type { TeleconsultRequest } from '@/lib/types'
 
@@ -67,7 +68,7 @@ export default function TeleconsultPage() {
   const [consults, setConsults] = useState<TeleconsultRequest[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const loadConsults = () => {
     setLoading(true)
     messagesService
       .listConversations()
@@ -80,6 +81,10 @@ export default function TeleconsultPage() {
       })
       .catch(() => setConsults([]))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadConsults()
   }, [])
 
   const filteredConsults = consults.filter((consult) => {
@@ -195,10 +200,16 @@ export default function TeleconsultPage() {
               onChange={(e) => setPriorityFilter(e.target.value)}
             />
           </div>
-          <Button variant="primary">
-            <Plus className="w-4 h-4" />
-            New Teleconsult
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => loadConsults()} disabled={loading}>
+              <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
+              Refresh
+            </Button>
+            <Button variant="primary">
+              <Plus className="w-4 h-4" />
+              New Teleconsult
+            </Button>
+          </div>
         </div>
       </Card>
 

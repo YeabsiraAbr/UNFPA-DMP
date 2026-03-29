@@ -13,6 +13,7 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Progress } from '@/components/ui/Progress'
 import { patientService, visitService, getCachedPatients, clearCache } from '@/services'
+import { downloadCsv } from '@/lib/download'
 import { LoadingState } from '@/components/ui/LoadingState'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
 import {
@@ -413,8 +414,38 @@ export default function PatientsPage() {
                 onChange={(e) => setClinicFilter(e.target.value)}
               />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="md">
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => {
+                  clearCache('patients-list')
+                  loadPatients()
+                }}
+                disabled={loading}
+              >
+                <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => {
+                  const rows: Record<string, unknown>[] = filteredPatients.map((p) => ({
+                    id: p.id,
+                    fullName: p.fullName,
+                    age: p.age,
+                    idNumber: p.idNumber,
+                    phoneNumber: p.phoneNumber ?? '',
+                    pregnancyStatus: p.pregnancyStatus,
+                    riskLevel: p.riskLevel,
+                    clinicId: p.clinicId,
+                    registeredAt: p.registeredAt,
+                  }))
+                  downloadCsv(`patients-${new Date().toISOString().slice(0, 10)}.csv`, rows)
+                }}
+                disabled={!filteredPatients.length}
+              >
                 <Download className="w-4 h-4" />
                 Export
               </Button>

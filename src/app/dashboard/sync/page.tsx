@@ -61,17 +61,27 @@ export default function SyncStatusPage() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncData, setSyncData] = useState<{ lastSyncTime?: string } | null>(null)
 
+  const reloadSyncStatus = () => {
+    profileService
+      .getSyncStatus()
+      .then((res) => {
+        if (res.success && res.data) {
+          setSyncData(res.data as { lastSyncTime?: string })
+        }
+      })
+      .catch(() => {})
+  }
+
   useEffect(() => {
-    profileService.getSyncStatus().then(res => {
-      if (res.success && res.data) {
-        setSyncData(res.data as { lastSyncTime?: string })
-      }
-    }).catch(() => {})
+    reloadSyncStatus()
   }, [])
 
   const handleSync = () => {
     setIsSyncing(true)
-    setTimeout(() => setIsSyncing(false), 3000)
+    setTimeout(() => {
+      setIsSyncing(false)
+      reloadSyncStatus()
+    }, 3000)
   }
 
   return (
@@ -120,15 +130,21 @@ export default function SyncStatusPage() {
                 </p>
               </div>
             </div>
-            <Button
-              variant="primary"
-              onClick={handleSync}
-              isLoading={isSyncing}
-              disabled={!DEFAULT_SYNC_STATUS.isOnline}
-            >
-              <RefreshCcw className={cn('w-4 h-4', isSyncing && 'animate-spin')} />
-              {isSyncing ? 'Syncing...' : 'Sync Now'}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => reloadSyncStatus()} disabled={isSyncing}>
+                <RefreshCcw className="w-4 h-4" />
+                Refresh status
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleSync}
+                isLoading={isSyncing}
+                disabled={!DEFAULT_SYNC_STATUS.isOnline}
+              >
+                <RefreshCcw className={cn('w-4 h-4', isSyncing && 'animate-spin')} />
+                {isSyncing ? 'Syncing...' : 'Sync Now'}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

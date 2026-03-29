@@ -15,9 +15,7 @@ import {
   Shield,
   ShieldAlert,
   MessageSquare,
-  Bell,
   BarChart3,
-  Brain,
   RefreshCcw,
   Settings,
   LogOut,
@@ -42,9 +40,10 @@ const navigation = [
   { i18nKey: "nav.gbvReports", href: "/dashboard/gbv", icon: Shield },
   { i18nKey: "nav.gbvScreening", href: "/dashboard/gbv-screening", icon: ShieldAlert },
   { i18nKey: "nav.messages", href: "/dashboard/messages", icon: MessageSquare },
-  { i18nKey: "nav.alerts", href: "/dashboard/alerts", icon: Bell },
+  // Alerts / AI Risk: uncomment + import Bell, Brain from lucide-react
+  // { i18nKey: "nav.alerts", href: "/dashboard/alerts", icon: Bell },
   { i18nKey: "nav.analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { i18nKey: "nav.aiRisk", href: "/dashboard/risk", icon: Brain },
+  // { i18nKey: "nav.aiRisk", href: "/dashboard/risk", icon: Brain },
   { i18nKey: "nav.syncStatus", href: "/dashboard/sync", icon: RefreshCcw },
   { i18nKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
 ] as const;
@@ -161,16 +160,6 @@ export function Sidebar() {
                 <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-sm rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-lg">
                   {label}
                 </div>
-              )}
-              {item.href === "/dashboard/alerts" && (
-                <span
-                  className={cn(
-                    "flex-shrink-0 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center",
-                    isCollapsed ? "absolute -top-1 -right-1" : "ml-auto"
-                  )}
-                >
-                  3
-                </span>
               )}
             </Link>
           );

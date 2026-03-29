@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { ancService, getCachedPatients } from '@/services'
+import { ancService, getCachedPatients, clearCache } from '@/services'
+import { downloadCsv } from '@/lib/download'
 import type { ANCRecord, Patient } from '@/services/types'
-import { Plus, Search, Eye, Pencil, Trash2, Baby } from 'lucide-react'
+import { Plus, Search, Eye, Pencil, Trash2, Baby, RefreshCcw, Download } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export default function ANCPage() {
@@ -150,9 +151,28 @@ export default function ANCPage() {
         <div className="w-full sm:w-80">
           <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4" /> New ANC Record
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => { clearCache('patients-list'); loadData() }} disabled={loading}>
+            <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!filtered.length}
+            onClick={() => {
+              const rows: Record<string, unknown>[] = filtered.map((r) => ({
+                ...(JSON.parse(JSON.stringify(r)) as Record<string, unknown>),
+                patientName: getPatientName(r.patientId),
+              }))
+              downloadCsv(`anc-records-${new Date().toISOString().slice(0, 10)}.csv`, rows)
+            }}
+          >
+            <Download className="w-4 h-4" /> Export
+          </Button>
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4" /> New ANC Record
+          </Button>
+        </div>
       </div>
 
       {loading ? (

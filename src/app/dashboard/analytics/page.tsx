@@ -14,7 +14,9 @@ import { Badge } from '@/components/ui/Badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import type { ClinicStats } from '@/lib/types'
 import { analyticsService } from '@/services'
-import { useState, useEffect } from 'react'
+import { downloadJson } from '@/lib/download'
+import { useState, useEffect, useCallback } from 'react'
+import { cn } from '@/lib/utils'
 import {
   Download,
   Calendar,
@@ -39,9 +41,12 @@ const DEFAULT_STATS: ClinicStats = {
 
 export default function AnalyticsPage() {
   const [stats, setStats] = useState(DEFAULT_STATS)
+  const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
-    analyticsService.getDashboard().then(res => {
+  const loadDashboard = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      const res = await analyticsService.getDashboard()
       if (res.success && res.data) {
         setStats({
           totalPatients: res.data.totalPatients ?? DEFAULT_STATS.totalPatients,
@@ -54,8 +59,16 @@ export default function AnalyticsPage() {
           syncPendingCount: DEFAULT_STATS.syncPendingCount,
         })
       }
-    }).catch(() => {})
+    } catch {
+      /* keep previous stats */
+    } finally {
+      setRefreshing(false)
+    }
   }, [])
+
+  useEffect(() => {
+    loadDashboard()
+  }, [loadDashboard])
 
   return (
     <DashboardLayout
@@ -83,11 +96,19 @@ export default function AnalyticsPage() {
             />
           </div>
           <div className="flex gap-2">
-            <Button variant="outline">
-              <RefreshCcw className="w-4 h-4" />
+            <Button variant="outline" onClick={() => loadDashboard()} disabled={refreshing}>
+              <RefreshCcw className={cn('w-4 h-4', refreshing && 'animate-spin')} />
               Refresh
             </Button>
-            <Button variant="primary">
+            <Button
+              variant="primary"
+              onClick={() =>
+                downloadJson(`analytics-export-${new Date().toISOString().slice(0, 10)}.json`, {
+                  exportedAt: new Date().toISOString(),
+                  kpi: stats,
+                })
+              }
+            >
               <Download className="w-4 h-4" />
               Export Report
             </Button>

@@ -159,6 +159,7 @@ const en = {
     unreadAlerts: "unread alerts",
     viewAllNotifications: "View all notifications →",
     language: "Language",
+    refreshCache: "Clear API cache and refresh",
   },
 
   // -------------------------------------------------------------------------

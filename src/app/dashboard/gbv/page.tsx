@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { gbvReportService, getCachedPatients } from '@/services'
+import { gbvReportService, getCachedPatients, clearCache } from '@/services'
+import { downloadCsv } from '@/lib/download'
 import type { GBVReport, Patient } from '@/services/types'
-import { Plus, Search, Eye, Edit, Trash2, Shield, Lock, AlertTriangle } from 'lucide-react'
+import { Plus, Search, Eye, Edit, Trash2, Shield, Lock, AlertTriangle, RefreshCcw, Download } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 
 export default function GBVPage() {
@@ -155,9 +156,28 @@ export default function GBVPage() {
         <div className="w-full sm:w-80">
           <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4" /> New Case Intake
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => { clearCache('patients-list'); loadData() }} disabled={loading}>
+            <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!filtered.length}
+            onClick={() => {
+              const rows: Record<string, unknown>[] = filtered.map((r) => ({
+                ...(JSON.parse(JSON.stringify(r)) as Record<string, unknown>),
+                patientName: getPatientName(r.patientId),
+              }))
+              downloadCsv(`gbv-reports-${new Date().toISOString().slice(0, 10)}.csv`, rows)
+            }}
+          >
+            <Download className="w-4 h-4" /> Export
+          </Button>
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4" /> New Case Intake
+          </Button>
+        </div>
       </div>
 
       {loading ? (

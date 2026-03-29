@@ -117,7 +117,7 @@ export default function RiskAssessmentPage() {
 
   const [highRiskPatients, setHighRiskPatients] = useState<Patient[]>([])
 
-  useEffect(() => {
+  const loadHighRisk = () => {
     setLoading(true)
     analyticsService
       .getHighRiskPatients()
@@ -130,6 +130,10 @@ export default function RiskAssessmentPage() {
       })
       .catch(() => setHighRiskPatients([]))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadHighRisk()
   }, [])
 
   const handleViewRisk = (patient: Patient) => {
@@ -251,8 +255,8 @@ export default function RiskAssessmentPage() {
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
                 Flagged Patients
               </CardTitle>
-              <Button variant="ghost" size="sm">
-                <RefreshCcw className="w-4 h-4" />
+              <Button variant="ghost" size="sm" onClick={() => loadHighRisk()} disabled={loading}>
+                <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
                 Refresh
               </Button>
             </CardHeader>

@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { ultrasoundService, getCachedPatients } from "@/services";
+import { downloadBlob } from "@/lib/download";
 import { formatDate, cn } from "@/lib/utils";
 import {
   Search,
@@ -219,11 +220,30 @@ export default function UltrasoundPage() {
   const handleViewImage = (image: UltrasoundImage) => {
     setSelectedImage(image);
     setShowImageModal(true);
-    ultrasoundService.getById(image.id).then((res) => {
+    ultrasoundService.getById(image.id, image.patientId).then((res) => {
       if (res.success && res.scan) {
         setSelectedImage(scanToUltrasoundImage(res.scan));
       }
     }).catch(() => {});
+  };
+
+  const handleDownloadScan = async () => {
+    if (!selectedImage?.imageUrl) return;
+    const name = `ultrasound-${selectedImage.id}.jpg`;
+    try {
+      const res = await fetch(selectedImage.imageUrl);
+      const blob = await res.blob();
+      downloadBlob(blob, blob.type.includes("png") ? name.replace(/\.jpg$/, ".png") : name);
+    } catch {
+      const a = document.createElement("a");
+      a.href = selectedImage.imageUrl;
+      a.download = name;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
   };
 
   const statusIcon = {
@@ -570,9 +590,12 @@ export default function UltrasoundPage() {
                   <ZoomIn className="w-4 h-4" />
                 </Button>
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   className="bg-black/50 text-white hover:bg-black/70"
+                  onClick={() => void handleDownloadScan()}
+                  disabled={!selectedImage.imageUrl}
                 >
                   <Download className="w-4 h-4" />
                 </Button>

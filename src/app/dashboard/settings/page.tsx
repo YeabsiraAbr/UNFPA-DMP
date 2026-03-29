@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
 import { Modal } from '@/components/ui/Modal'
-import { profileService, authService, rolesService, roleNameForApi, userService } from '@/services'
+import { profileService, authService, rolesService, roleNameForApi, userService, clearCache } from '@/services'
 import type { Profile, Role, User } from '@/services/types'
 
 function profileToUser(p: Profile): User | null {
@@ -792,20 +792,61 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      if (!window.confirm('Reload the app and clear in-memory API cache? Unsaved work in other tabs may be lost.')) return
+                      clearCache()
+                      window.location.reload()
+                    }}
+                  >
                     <RefreshCcw className="w-4 h-4" />
                     Force Sync All Data
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      clearCache()
+                    }}
+                  >
                     <Database className="w-4 h-4" />
                     Clear Local Cache
                   </Button>
-                  <Button variant="outline" className="w-full justify-start text-amber-600">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-amber-600"
+                    onClick={() => {
+                      clearCache('dashboard-stats')
+                    }}
+                  >
                     <Settings className="w-4 h-4" />
                     Reset Risk Rules
                   </Button>
                   <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                    <Button variant="danger" className="w-full">
+                    <Button
+                      variant="danger"
+                      className="w-full"
+                      onClick={() => {
+                        if (!window.confirm('Clear in-memory cache and non-auth browser storage for this app? You will stay signed in.')) return
+                        clearCache()
+                        const keep = new Set([
+                          'unfpa_access_token',
+                          'unfpa_refresh_token',
+                          'isLoggedIn',
+                          'unfpa_user_id',
+                        ])
+                        try {
+                          for (let i = localStorage.length - 1; i >= 0; i--) {
+                            const k = localStorage.key(i)
+                            if (k && !keep.has(k)) localStorage.removeItem(k)
+                          }
+                        } catch {
+                          /* ignore */
+                        }
+                      }}
+                    >
                       <Trash2 className="w-4 h-4" />
                       Clear All Local Data
                     </Button>

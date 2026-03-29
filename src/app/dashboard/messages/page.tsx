@@ -27,7 +27,7 @@ import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
 import { messagesService } from '@/services'
 import type { Conversation, Message } from '@/services/types'
 import { cn } from '@/lib/utils'
-import { MessageSquare, Search, Send, ArrowLeft, Plus } from 'lucide-react'
+import { MessageSquare, Search, Send, ArrowLeft, Plus, RefreshCcw } from 'lucide-react'
 
 export default function MessagesPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -157,6 +157,15 @@ export default function MessagesPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="flex-1"
               />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => loadConversations()}
+                disabled={loadingConversations}
+                title="Refresh conversations"
+              >
+                <RefreshCcw className={cn('w-4 h-4', loadingConversations && 'animate-spin')} />
+              </Button>
               <Button
                 size="sm"
                 onClick={() => setShowNewConversation(!showNewConversation)}

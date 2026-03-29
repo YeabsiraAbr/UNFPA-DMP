@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { StatsCard } from '@/components/dashboard/StatsCard'
 import { QuickActions } from '@/components/dashboard/QuickActions'
@@ -8,7 +8,7 @@ import { RecentActivity } from '@/components/dashboard/RecentActivity'
 import { UpcomingAppointments } from '@/components/dashboard/UpcomingAppointments'
 import { HighRiskPatients } from '@/components/dashboard/HighRiskPatients'
 import { LoadingState } from '@/components/ui/LoadingState'
-import { analyticsService, cached } from '@/services'
+import { analyticsService, cached, clearCache } from '@/services'
 import type { DashboardStats } from '@/services/types'
 import {
   Users,
@@ -19,13 +19,18 @@ import {
   Shield,
   Stethoscope,
   ClipboardList,
+  RefreshCcw,
 } from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/utils'
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const loadStats = useCallback(() => {
+    setLoading(true)
+    clearCache('dashboard-stats')
     cached('dashboard-stats', () => analyticsService.getDashboard())
       .then(res => {
         if (res.success && res.data) setStats(res.data)
@@ -33,6 +38,10 @@ export default function DashboardPage() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    loadStats()
+  }, [loadStats])
 
   if (loading) {
     return (
@@ -47,6 +56,12 @@ export default function DashboardPage() {
       title="Dashboard"
       subtitle="Digital Maternity Package - Nogob Zone, Ethiopia"
     >
+      <div className="flex justify-end mb-4">
+        <Button variant="outline" size="md" onClick={() => loadStats()} disabled={loading}>
+          <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
+          Refresh data
+        </Button>
+      </div>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatsCard

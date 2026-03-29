@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
 import { formatRelativeTime, cn } from '@/lib/utils'
+import { downloadJson } from '@/lib/download'
 import {
   Bell,
   AlertTriangle,
@@ -24,6 +25,7 @@ import {
   Trash2,
   ArrowRight,
   Shield,
+  Download,
 } from 'lucide-react'
 import type { Alert } from '@/lib/types'
 
@@ -154,12 +156,35 @@ export default function AlertsPage() {
               onChange={(e) => setPriorityFilter(e.target.value)}
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setTypeFilter('all')
+                setPriorityFilter('all')
+              }}
+            >
+              <RefreshCcw className="w-4 h-4" />
+              Reset filters
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                downloadJson(`alerts-export-${new Date().toISOString().slice(0, 10)}.json`, {
+                  exportedAt: new Date().toISOString(),
+                  alerts: filteredAlerts,
+                })
+              }
+              disabled={!filteredAlerts.length}
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </Button>
             <Button variant="outline" onClick={markAllAsRead}>
               <CheckCheck className="w-4 h-4" />
               Mark All Read
             </Button>
-            <Button variant="ghost">
+            <Button variant="ghost" onClick={() => setAlerts([])}>
               <Trash2 className="w-4 h-4" />
               Clear All
             </Button>

@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { LoadingState, EmptyState } from '@/components/ui/LoadingState'
-import { srhService, getCachedPatients } from '@/services'
+import { srhService, getCachedPatients, clearCache } from '@/services'
+import { downloadCsv } from '@/lib/download'
 import type { SRHRegistration, Patient } from '@/services/types'
-import { Plus, Search, Eye, Pencil, Trash2, Heart } from 'lucide-react'
+import { Plus, Search, Eye, Pencil, Trash2, Heart, RefreshCcw, Download } from 'lucide-react'
 
 const SRH_SERVICE_TYPES = ['Family Planning', 'Routine Care', 'STI/HIV', 'Others'] as const
 
@@ -181,9 +182,28 @@ export default function SRHPage() {
         <div className="w-full sm:w-80">
           <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
-        <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-          <Plus className="w-4 h-4" /> New SRH Record
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => { clearCache('patients-list'); loadData() }} disabled={loading}>
+            <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!filtered.length}
+            onClick={() => {
+              const rows: Record<string, unknown>[] = filtered.map((r) => ({
+                ...(JSON.parse(JSON.stringify(r)) as Record<string, unknown>),
+                patientName: getPatientName(r.patientId),
+              }))
+              downloadCsv(`srh-registrations-${new Date().toISOString().slice(0, 10)}.csv`, rows)
+            }}
+          >
+            <Download className="w-4 h-4" /> Export
+          </Button>
+          <Button variant="primary" onClick={() => setShowCreateModal(true)}>
+            <Plus className="w-4 h-4" /> New SRH Record
+          </Button>
+        </div>
       </div>
 
       {loading ? (

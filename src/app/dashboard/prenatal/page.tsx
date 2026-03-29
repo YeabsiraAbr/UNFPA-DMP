@@ -11,7 +11,8 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Modal } from '@/components/ui/Modal'
 import { Progress } from '@/components/ui/Progress'
 import { LoadingState } from '@/components/ui/LoadingState'
-import { getCachedPatients, visitService } from '@/services'
+import { getCachedPatients, visitService, clearCache } from '@/services'
+import { downloadCsv } from '@/lib/download'
 import type { Patient as ApiPatient, Visit as ApiVisit } from '@/services/types'
 import { formatDate, formatRelativeTime, cn } from '@/lib/utils'
 import {
@@ -39,6 +40,8 @@ import {
   AlertTriangle,
   ChevronRight,
   TrendingUp,
+  RefreshCcw,
+  Download,
 } from 'lucide-react'
 import type { PrenatalVisit, Patient } from '@/lib/types'
 
@@ -313,6 +316,31 @@ export default function PrenatalCarePage() {
                 ]}
                 value="all"
               />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  clearCache('patients-list')
+                  loadData()
+                }}
+                disabled={loading}
+              >
+                <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
+                Refresh
+              </Button>
+              <Button
+                variant="outline"
+                disabled={!filteredVisits.length}
+                onClick={() => {
+                  const rows: Record<string, unknown>[] = filteredVisits.map((v) => ({
+                    ...(JSON.parse(JSON.stringify(v)) as Record<string, unknown>),
+                    patientName: getPatientForVisit(v)?.fullName ?? '',
+                  }))
+                  downloadCsv(`prenatal-visits-${new Date().toISOString().slice(0, 10)}.csv`, rows)
+                }}
+              >
+                <Download className="w-4 h-4" />
+                Export
+              </Button>
               <Button variant="primary" onClick={() => setShowNewVisitModal(true)}>
                 <Plus className="w-4 h-4" />
                 New Visit
@@ -623,7 +651,9 @@ export default function PrenatalCarePage() {
                 <FileText className="w-4 h-4" />
                 Edit Visit
               </Button>
-              <Button variant="outline">Print Summary</Button>
+              <Button type="button" variant="outline" onClick={() => window.print()}>
+                Print Summary
+              </Button>
             </div>
           </div>
         )}

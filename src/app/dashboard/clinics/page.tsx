@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Badge } from '@/components/ui/Badge'
 import { Modal } from '@/components/ui/Modal'
-import { getCachedPatients } from '@/services'
+import { getCachedPatients, clearCache } from '@/services'
+import { downloadCsv } from '@/lib/download'
 import { formatRelativeTime, cn } from '@/lib/utils'
 import {
   Building2,
@@ -21,6 +22,7 @@ import {
   MapPin,
   Users,
   RefreshCcw,
+  Download,
   Settings,
   Truck,
   Home,
@@ -37,17 +39,45 @@ export default function ClinicsPage() {
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null)
   const [showClinicModal, setShowClinicModal] = useState(false)
   const [clinics, setClinics] = useState<Clinic[]>([])
+  const [loadingClinics, setLoadingClinics] = useState(false)
+
+  const loadClinics = async () => {
+    setLoadingClinics(true)
+    try {
+      clearCache('patients-list')
+      const patients = await getCachedPatients()
+      const facilityMap = new Map<string, { name: string; count: number }>()
+      for (const p of patients) {
+        const raw = p as Record<string, unknown>
+        const id = String(raw.clinicId ?? raw.clinicName ?? 'unknown')
+        const name = String(raw.clinicName ?? raw.clinicId ?? 'Unknown facility')
+        const cur = facilityMap.get(id)
+        if (cur) cur.count += 1
+        else facilityMap.set(id, { name, count: 1 })
+      }
+      const list: Clinic[] = Array.from(facilityMap.entries()).map(([id, v]) => ({
+        id,
+        name: v.name,
+        location: '',
+        region: '',
+        zone: '',
+        woreda: '',
+        type: 'fixed',
+        status: 'active',
+        staff: [],
+        patientCount: v.count,
+        lastSync: new Date().toISOString(),
+      }))
+      setClinics(list)
+    } catch {
+      setClinics([])
+    } finally {
+      setLoadingClinics(false)
+    }
+  }
 
   useEffect(() => {
-    getCachedPatients().then(patients => {
-      if (patients.length) {
-        const facilityMap = new Map<string, number>()
-        patients.forEach(p => {
-          const fac = String((p as Record<string, unknown>).clinicName ?? (p as Record<string, unknown>).clinicId ?? '')
-          if (fac) facilityMap.set(fac, (facilityMap.get(fac) ?? 0) + 1)
-        })
-      }
-    }).catch(() => {})
+    loadClinics()
   }, [])
 
   const filteredClinics = clinics.filter((clinic) =>
@@ -122,10 +152,37 @@ export default function ClinicsPage() {
               icon={Search}
             />
           </div>
-          <Button variant="primary">
-            <Plus className="w-4 h-4" />
-            Add Clinic
-          </Button>
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => loadClinics()} disabled={loadingClinics}>
+              <RefreshCcw className={cn('w-4 h-4', loadingClinics && 'animate-spin')} />
+              Refresh
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!filteredClinics.length}
+              onClick={() =>
+                downloadCsv(
+                  `clinics-${new Date().toISOString().slice(0, 10)}.csv`,
+                  filteredClinics.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    type: c.type,
+                    status: c.status,
+                    patientCount: c.patientCount,
+                    location: c.location,
+                    woreda: c.woreda,
+                  }))
+                )
+              }
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </Button>
+            <Button variant="primary">
+              <Plus className="w-4 h-4" />
+              Add Clinic
+            </Button>
+          </div>
         </div>
       </Card>
 
