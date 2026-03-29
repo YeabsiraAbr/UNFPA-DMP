@@ -9,11 +9,36 @@ import { Select } from '@/components/ui/Select'
 import { Badge } from '@/components/ui/Badge'
 import { Avatar } from '@/components/ui/Avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs'
-import { profileService, authService, rolesService } from '@/services'
-import type { Role } from '@/services/types'
+import { Modal } from '@/components/ui/Modal'
+import { profileService, authService, rolesService, roleNameForApi, userService } from '@/services'
+import type { Profile, Role, User } from '@/services/types'
+
+function profileToUser(p: Profile): User | null {
+  const id = String(p.id ?? '').trim()
+  if (!id) return null
+  const meta = p as Record<string, unknown>
+  const created = typeof meta.createdAt === 'string' ? meta.createdAt : new Date().toISOString()
+  return {
+    id,
+    phone: p.phone || '',
+    fullName: p.fullName,
+    isActive: true,
+    createdAt: created,
+  }
+}
+
+function mergeUserLists(...groups: User[][]): User[] {
+  const map = new Map<string, User>()
+  for (const g of groups) {
+    for (const u of g) {
+      if (u.id) map.set(u.id, u)
+    }
+  }
+  return Array.from(map.values())
+}
 import {
   Settings,
-  User,
+  User as UserIcon,
   Shield,
   Bell,
   Database,
@@ -33,6 +58,7 @@ import {
   Mail,
   PhoneCall,
   ExternalLink,
+  CheckCircle2,
 } from 'lucide-react'
 
 export default function SettingsPage() {
@@ -48,16 +74,76 @@ export default function SettingsPage() {
   const [helpInfo, setHelpInfo] = useState<{ email?: string; phone?: string; faqUrl?: string } | null>(null)
   const [loadingHelp, setLoadingHelp] = useState(false)
 
+  const [directoryUsers, setDirectoryUsers] = useState<User[]>([])
+  const [showAddUserModal, setShowAddUserModal] = useState(false)
+  const [newUserForm, setNewUserForm] = useState({ fullName: '', phone: '', password: '' })
+  const [addUserSubmitting, setAddUserSubmitting] = useState(false)
+  const [addUserError, setAddUserError] = useState('')
+
+  const [assignRole, setAssignRole] = useState<Role | null>(null)
+  const [assignUserId, setAssignUserId] = useState('')
+  const [assignSubmitting, setAssignSubmitting] = useState(false)
+  const [assignError, setAssignError] = useState('')
+
+  const [removeRole, setRemoveRole] = useState<Role | null>(null)
+  const [removeUserId, setRemoveUserId] = useState('')
+  const [removeSubmitting, setRemoveSubmitting] = useState(false)
+  const [removeError, setRemoveError] = useState('')
+
+  const [roleAssignSuccess, setRoleAssignSuccess] = useState<{ userId: string; roleName: string } | null>(null)
+
+  const [loadingDirectoryUsers, setLoadingDirectoryUsers] = useState(true)
+  const [directoryUsersError, setDirectoryUsersError] = useState('')
+
   useEffect(() => {
-    profileService.getMe().then(res => {
-      if (res.success && res.profile) {
-        setProfile({
-          name: res.profile.fullName || '',
-          phone: res.profile.phone || '',
-          role: 'doctor',
-        })
+    let cancelled = false
+
+    async function loadDirectoryUsers() {
+      setLoadingDirectoryUsers(true)
+      setDirectoryUsersError('')
+      const messages: string[] = []
+      try {
+        const [listOutcome, meOutcome] = await Promise.allSettled([userService.list(), profileService.getMe()])
+        if (cancelled) return
+
+        const fromList =
+          listOutcome.status === 'fulfilled' ? (listOutcome.value.users ?? []) : []
+        if (listOutcome.status === 'rejected') {
+          const err = listOutcome.reason
+          messages.push(err instanceof Error ? err.message : 'Could not load user directory from the API.')
+        }
+
+        let me: User | null = null
+        if (meOutcome.status === 'fulfilled' && meOutcome.value.success) {
+          const p = meOutcome.value.profile
+          setProfile({
+            name: p.fullName || '',
+            phone: p.phone || '',
+            role: 'doctor',
+          })
+          me = profileToUser(p)
+          if (!me) {
+            messages.push(
+              'Your profile response did not include a user id. Ensure GET /profile/me returns id or userId.'
+            )
+          }
+        } else if (meOutcome.status === 'rejected') {
+          const err = meOutcome.reason
+          messages.push(err instanceof Error ? err.message : 'Could not load your profile (GET /profile/me).')
+        }
+
+        setDirectoryUsers((prev) => mergeUserLists(fromList, me ? [me] : [], prev))
+        if (messages.length && !cancelled) setDirectoryUsersError(messages.join(' '))
+      } catch (e) {
+        if (!cancelled) {
+          setDirectoryUsersError(e instanceof Error ? e.message : 'Failed to load users.')
+        }
+      } finally {
+        if (!cancelled) setLoadingDirectoryUsers(false)
       }
-    }).catch(() => {})
+    }
+
+    loadDirectoryUsers()
 
     setLoadingRoles(true)
     rolesService.getAll().then(res => {
@@ -75,6 +161,10 @@ export default function SettingsPage() {
         })
       }
     }).catch(() => {}).finally(() => setLoadingHelp(false))
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const handleSaveProfile = async () => {
@@ -99,17 +189,106 @@ export default function SettingsPage() {
     }
   }
 
-  const handleAssignRole = async (userId: string, roleId: string) => {
-    try {
-      await rolesService.assign(userId, roleId)
-    } catch {}
+  const openAddUserModal = () => {
+    setAddUserError('')
+    setNewUserForm({ fullName: '', phone: '', password: '' })
+    setShowAddUserModal(true)
   }
 
-  const handleRemoveRole = async (userId: string, roleId: string) => {
-    if (!confirm('Remove this role from user?')) return
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setAddUserError('')
+    const { fullName, phone, password } = newUserForm
+    if (!fullName.trim() || !phone.trim() || !password) {
+      setAddUserError('Please fill in full name, phone, and password.')
+      return
+    }
+    if (fullName.trim().length < 4) {
+      setAddUserError('Full name must be at least 4 characters.')
+      return
+    }
+    if (password.length < 4) {
+      setAddUserError('Password must be at least 4 characters.')
+      return
+    }
+    setAddUserSubmitting(true)
     try {
-      await rolesService.remove(userId, roleId)
-    } catch {}
+      const { user } = await authService.register({
+        fullName: fullName.trim(),
+        phone: phone.trim(),
+        password,
+      })
+      setDirectoryUsers((prev) => (prev.some((u) => u.id === user.id) ? prev : [user, ...prev]))
+      setShowAddUserModal(false)
+      setNewUserForm({ fullName: '', phone: '', password: '' })
+    } catch (err) {
+      setAddUserError(err instanceof Error ? err.message : 'Registration failed.')
+    } finally {
+      setAddUserSubmitting(false)
+    }
+  }
+
+  const openAssignModal = (role: Role) => {
+    setAssignError('')
+    setAssignUserId('')
+    setAssignRole(role)
+  }
+
+  const submitAssignRole = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!assignRole) return
+    const userId = assignUserId.trim()
+    if (!userId) {
+      setAssignError('Please enter a user ID.')
+      return
+    }
+    setAssignSubmitting(true)
+    setAssignError('')
+    try {
+      const res = await rolesService.assign(userId, roleNameForApi(assignRole))
+      if (!res.success) {
+        setAssignError('Role assignment was not successful.')
+        return
+      }
+      setAssignRole(null)
+      setAssignUserId('')
+      if (res.result) {
+        setRoleAssignSuccess({ userId: res.result.userId, roleName: res.result.roleName })
+      } else {
+        setRoleAssignSuccess({ userId, roleName: roleNameForApi(assignRole) })
+      }
+    } catch (err) {
+      setAssignError(err instanceof Error ? err.message : 'Failed to assign role.')
+    } finally {
+      setAssignSubmitting(false)
+    }
+  }
+
+  const openRemoveModal = (role: Role) => {
+    setRemoveError('')
+    setRemoveUserId('')
+    setRemoveRole(role)
+  }
+
+  const submitRemoveRole = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!removeRole) return
+    const userId = removeUserId.trim()
+    if (!userId) {
+      setRemoveError('Please enter a user ID.')
+      return
+    }
+    setRemoveSubmitting(true)
+    setRemoveError('')
+    try {
+      await rolesService.remove(userId, roleNameForApi(removeRole))
+      setRemoveRole(null)
+      setRemoveUserId('')
+    } catch (err) {
+      setRemoveError(err instanceof Error ? err.message : 'Failed to remove role.')
+    } finally {
+      setRemoveSubmitting(false)
+    }
   }
 
   return (
@@ -132,7 +311,7 @@ export default function SettingsPage() {
             <Card variant="elevated" className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-brand-500" />
+                  <UserIcon className="w-5 h-5 text-brand-500" />
                   Profile Information
                 </CardTitle>
               </CardHeader>
@@ -237,19 +416,186 @@ export default function SettingsPage() {
                 <Shield className="w-5 h-5 text-brand-500" />
                 User Management
               </CardTitle>
-              <Button variant="primary">
+              <Button variant="primary" onClick={openAddUserModal}>
                 <Plus className="w-4 h-4" />
                 Add User
               </Button>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <p className="text-sm text-slate-500 text-center py-8">
-                  No users listed. A user directory API is not available yet.
-                </p>
-              </div>
+              {directoryUsersError && (
+                <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm">
+                  {directoryUsersError}
+                </div>
+              )}
+              {loadingDirectoryUsers ? (
+                <p className="text-sm text-slate-500 text-center py-8">Loading users…</p>
+              ) : directoryUsers.length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-8">No users yet. Add a user with the button above.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80">
+                        <th className="text-left p-3 font-medium text-slate-700 dark:text-slate-300">User ID</th>
+                        <th className="text-left p-3 font-medium text-slate-700 dark:text-slate-300">Name</th>
+                        <th className="text-left p-3 font-medium text-slate-700 dark:text-slate-300">Phone</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {directoryUsers.map((u) => (
+                        <tr key={u.id} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                          <td className="p-3 font-mono text-xs text-slate-600 dark:text-slate-400">{u.id}</td>
+                          <td className="p-3 text-slate-900 dark:text-white">{u.fullName ?? '—'}</td>
+                          <td className="p-3 text-slate-600 dark:text-slate-400">{u.phone}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </CardContent>
           </Card>
+
+          <Modal
+            isOpen={showAddUserModal}
+            onClose={() => !addUserSubmitting && setShowAddUserModal(false)}
+            title="Add user"
+            description="Creates an account via POST /auth/register (same as public registration)."
+            size="md"
+          >
+            <form onSubmit={handleAddUser} className="space-y-4 -mt-2">
+              {addUserError && (
+                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+                  {addUserError}
+                </div>
+              )}
+              <Input
+                label="Full name"
+                value={newUserForm.fullName}
+                onChange={(e) => setNewUserForm({ ...newUserForm, fullName: e.target.value })}
+                autoComplete="name"
+              />
+              <Input
+                label="Phone"
+                type="tel"
+                placeholder="+251911234567"
+                value={newUserForm.phone}
+                onChange={(e) => setNewUserForm({ ...newUserForm, phone: e.target.value })}
+                autoComplete="tel"
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={newUserForm.password}
+                onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                autoComplete="new-password"
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={() => setShowAddUserModal(false)} disabled={addUserSubmitting}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" isLoading={addUserSubmitting}>
+                  Create user
+                </Button>
+              </div>
+            </form>
+          </Modal>
+
+          <Modal
+            isOpen={assignRole !== null}
+            onClose={() => !assignSubmitting && setAssignRole(null)}
+            title="Assign role"
+            description={assignRole ? `Grant “${assignRole.name}” to a user by ID.` : undefined}
+            size="sm"
+          >
+            <form onSubmit={submitAssignRole} className="space-y-4 -mt-2">
+              {assignError && (
+                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+                  {assignError}
+                </div>
+              )}
+              <Input
+                label="User ID"
+                placeholder="Paste UUID from the table above"
+                value={assignUserId}
+                onChange={(e) => setAssignUserId(e.target.value)}
+                className="font-mono text-sm"
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={() => setAssignRole(null)} disabled={assignSubmitting}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" isLoading={assignSubmitting}>
+                  Assign
+                </Button>
+              </div>
+            </form>
+          </Modal>
+
+          <Modal
+            isOpen={roleAssignSuccess !== null}
+            onClose={() => setRoleAssignSuccess(null)}
+            title="Role assigned"
+            description="The server confirmed this assignment."
+            size="sm"
+          >
+            {roleAssignSuccess && (
+              <div className="space-y-4 -mt-2">
+                <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-2 text-sm min-w-0">
+                    <p className="text-slate-600 dark:text-slate-400">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">User ID</span>
+                    </p>
+                    <p className="font-mono text-xs text-slate-900 dark:text-white break-all">{roleAssignSuccess.userId}</p>
+                    <p className="text-slate-600 dark:text-slate-400 pt-1">
+                      <span className="font-medium text-slate-700 dark:text-slate-300">Role</span>
+                    </p>
+                    <p className="font-semibold text-emerald-800 dark:text-emerald-200">{roleAssignSuccess.roleName}</p>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <Button variant="primary" onClick={() => setRoleAssignSuccess(null)}>
+                    OK
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Modal>
+
+          <Modal
+            isOpen={removeRole !== null}
+            onClose={() => !removeSubmitting && setRemoveRole(null)}
+            title="Remove role from user"
+            description={removeRole ? `Remove “${removeRole.name}” from the user with this ID.` : undefined}
+            size="sm"
+          >
+            <form onSubmit={submitRemoveRole} className="space-y-4 -mt-2">
+              {removeError && (
+                <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+                  {removeError}
+                </div>
+              )}
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                This calls the role remove API. Make sure the user ID is correct.
+              </p>
+              <Input
+                label="User ID"
+                placeholder="Paste UUID"
+                value={removeUserId}
+                onChange={(e) => setRemoveUserId(e.target.value)}
+                className="font-mono text-sm"
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button type="button" variant="ghost" onClick={() => setRemoveRole(null)} disabled={removeSubmitting}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="danger" isLoading={removeSubmitting}>
+                  Remove role
+                </Button>
+              </div>
+            </form>
+          </Modal>
 
           <Card variant="elevated" className="mt-6">
             <CardHeader>
@@ -275,24 +621,14 @@ export default function SettingsPage() {
                         <p className="text-xs text-slate-500 font-mono">{role.id}</p>
                       </div>
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const userId = prompt('Enter user ID to assign this role:')
-                            if (userId) handleAssignRole(userId, role.id)
-                          }}
-                        >
+                        <Button variant="outline" size="sm" onClick={() => openAssignModal(role)}>
                           Assign
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
                           className="text-red-500"
-                          onClick={() => {
-                            const userId = prompt('Enter user ID to remove this role from:')
-                            if (userId) handleRemoveRole(userId, role.id)
-                          }}
+                          onClick={() => openRemoveModal(role)}
                         >
                           Remove
                         </Button>

@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * API: None — there is no alerts/notifications endpoint wired here.
+ * State starts empty; filters and actions only affect local state until a backend exists.
+ */
+
 import { useState } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'

@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * API: GET /analytics/high-risk for the high-risk patient list.
+ * The “risk rules” section uses static in-file data (riskRules) — not loaded from an API.
+ */
+
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'

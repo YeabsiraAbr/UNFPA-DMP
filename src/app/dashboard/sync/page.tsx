@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * API: Partial — only GET /profile/sync-status is used (last sync time when returned).
+ * Queue, conflicts, online/offline banner, storage bars, and “Sync Now” are not backed by sync APIs (static defaults or empty lists).
+ */
+
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'

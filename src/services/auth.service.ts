@@ -26,7 +26,11 @@ export const authService = {
 
   async register(data: RegisterRequest): Promise<{ success: boolean; user: User }> {
     const raw = await api.post<Record<string, unknown>>("/auth/register", { body: data, noAuth: true });
-    const user = (raw.data ?? raw.user ?? raw) as User;
+    const payload = (raw.data ?? raw) as Record<string, unknown>;
+    const user = (payload.user ?? payload) as User;
+    if (!user || typeof user.id !== "string") {
+      throw new Error("Invalid response from register");
+    }
     return { success: true, user };
   },
 

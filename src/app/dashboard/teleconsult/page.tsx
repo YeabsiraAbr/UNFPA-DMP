@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * API: No dedicated teleconsult endpoint — this page reuses GET /messages/conversations
+ * and maps threads to a teleconsult-shaped UI. Not a substitute for a real teleconsult API.
+ */
+
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'

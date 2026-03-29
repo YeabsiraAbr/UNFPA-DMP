@@ -1,5 +1,11 @@
 'use client'
 
+/**
+ * API: Partial — KPI row uses GET /analytics/dashboard only.
+ * Chart tabs (Overview, Patients, Clinical, Operations) have no API; they show placeholders.
+ * Date/clinic filters and Export are UI-only until endpoints exist.
+ */
+
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'

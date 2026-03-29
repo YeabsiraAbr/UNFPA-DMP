@@ -1,5 +1,10 @@
 'use client'
 
+/**
+ * API: No /clinic (or equivalent) endpoint — this page is not backed by a clinics API.
+ * Optional use of GET /patient (getCachedPatients) for facility name aggregation only; the clinic list UI stays empty unless you add real data + API.
+ */
+
 import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'

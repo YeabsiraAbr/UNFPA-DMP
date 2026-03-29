@@ -1,3 +1,7 @@
+/**
+ * Messaging API client. Maps backend responses with { data: ... } into { success, conversations|messages|conversation|message }.
+ * See src/app/dashboard/messages/page.tsx for which methods the UI actually calls.
+ */
 import { api } from "./api-client";
 import type { Conversation, Message, SuccessResponse } from "./types";
 

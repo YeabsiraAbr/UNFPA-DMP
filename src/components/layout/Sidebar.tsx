@@ -26,29 +26,31 @@ import {
 import { useState, useEffect } from "react";
 import { Avatar } from "../ui/Avatar";
 import { profileService } from "@/services";
+import { useTranslation } from "@/lib/i18n";
 
 const fallbackUser = { id: '', name: 'User', email: '', role: 'admin' as const, lastActive: '', status: 'online' as const }
 
 const navigation = [
-  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Patients", href: "/dashboard/patients", icon: Users },
-  { name: "ANC Records", href: "/dashboard/anc", icon: ClipboardList },
-  { name: "Prenatal Care", href: "/dashboard/prenatal", icon: Baby },
-  { name: "Delivery", href: "/dashboard/delivery", icon: Stethoscope },
-  { name: "PNC", href: "/dashboard/pnc", icon: HeartPulse },
-  { name: "Ultrasound", href: "/dashboard/ultrasound", icon: Image },
-  { name: "SRH", href: "/dashboard/srh", icon: Heart },
-  { name: "GBV Reports", href: "/dashboard/gbv", icon: Shield },
-  { name: "GBV Screening", href: "/dashboard/gbv-screening", icon: ShieldAlert },
-  { name: "Messages", href: "/dashboard/messages", icon: MessageSquare },
-  { name: "Alerts", href: "/dashboard/alerts", icon: Bell },
-  { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
-  { name: "AI Risk", href: "/dashboard/risk", icon: Brain },
-  { name: "Sync Status", href: "/dashboard/sync", icon: RefreshCcw },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
-];
+  { i18nKey: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { i18nKey: "nav.patients", href: "/dashboard/patients", icon: Users },
+  { i18nKey: "nav.ancRecords", href: "/dashboard/anc", icon: ClipboardList },
+  { i18nKey: "nav.prenatalCare", href: "/dashboard/prenatal", icon: Baby },
+  { i18nKey: "nav.delivery", href: "/dashboard/delivery", icon: Stethoscope },
+  { i18nKey: "nav.pnc", href: "/dashboard/pnc", icon: HeartPulse },
+  { i18nKey: "nav.ultrasound", href: "/dashboard/ultrasound", icon: Image },
+  { i18nKey: "nav.srh", href: "/dashboard/srh", icon: Heart },
+  { i18nKey: "nav.gbvReports", href: "/dashboard/gbv", icon: Shield },
+  { i18nKey: "nav.gbvScreening", href: "/dashboard/gbv-screening", icon: ShieldAlert },
+  { i18nKey: "nav.messages", href: "/dashboard/messages", icon: MessageSquare },
+  { i18nKey: "nav.alerts", href: "/dashboard/alerts", icon: Bell },
+  { i18nKey: "nav.analytics", href: "/dashboard/analytics", icon: BarChart3 },
+  { i18nKey: "nav.aiRisk", href: "/dashboard/risk", icon: Brain },
+  { i18nKey: "nav.syncStatus", href: "/dashboard/sync", icon: RefreshCcw },
+  { i18nKey: "nav.settings", href: "/dashboard/settings", icon: Settings },
+] as const;
 
 export function Sidebar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -96,10 +98,10 @@ export function Sidebar() {
         {!isCollapsed && (
           <div className="animate-fade-in">
             <h1 className="text-lg font-bold text-slate-900 dark:text-white">
-              UNFPA DMP
+              {t("nav.logoTitle")}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Maternal Health
+              {t("nav.logoSubtitle")}
             </p>
           </div>
         )}
@@ -126,13 +128,15 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto max-h-[calc(100vh-180px)]">
         {navigation.map((item) => {
+          const label = t(item.i18nKey);
+          // Use `href + "/"` for prefix match so `/dashboard/gbv` does not match `/dashboard/gbv-screening`
           const isActive =
             pathname === item.href ||
-            (item.href !== "/dashboard" && pathname.startsWith(item.href));
+            (item.href !== "/dashboard" && pathname.startsWith(`${item.href}/`));
 
           return (
             <Link
-              key={item.name}
+              key={item.href}
               href={item.href}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
@@ -150,15 +154,15 @@ export function Sidebar() {
               />
               {!isCollapsed && (
                 <span className="font-medium text-sm animate-fade-in">
-                  {item.name}
+                  {label}
                 </span>
               )}
               {isCollapsed && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-sm rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-lg">
-                  {item.name}
+                  {label}
                 </div>
               )}
-              {item.name === "Alerts" && (
+              {item.href === "/dashboard/alerts" && (
                 <span
                   className={cn(
                     "flex-shrink-0 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center",
@@ -205,7 +209,7 @@ export function Sidebar() {
             <button
               onClick={handleLogout}
               className="p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-              title="Logout"
+              title={t("nav.logout")}
             >
               <LogOut className="w-4 h-4" />
             </button>

@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Heart, Eye, EyeOff, ArrowLeft, Phone } from 'lucide-react'
 import { authService } from '@/services'
+import { useTranslation } from '@/lib/i18n'
 
 type View = 'login' | 'forgot' | 'otp' | 'newPassword'
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [view, setView] = useState<View>('login')
   const [phone, setPhone] = useState('')
@@ -29,7 +31,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     if (!phone || !password) {
-      setError('Please enter both phone number and password')
+      setError(t('login.validationPhonePassword'))
       return
     }
     setIsLoading(true)
@@ -38,7 +40,7 @@ export default function LoginPage() {
       localStorage.setItem('isLoggedIn', 'true')
       router.push('/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please check your credentials.')
+      setError(err instanceof Error ? err.message : t('login.loginFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -48,16 +50,16 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     if (!phone) {
-      setError('Please enter your phone number')
+      setError(t('login.validationPhone'))
       return
     }
     setIsLoading(true)
     try {
       await authService.forgotPassword({ phone })
-      setSuccess('If an account exists with this phone number, an OTP has been sent.')
+      setSuccess(t('login.forgotOtpSuccess'))
       setView('otp')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.')
+      setError(err instanceof Error ? err.message : t('login.sendOtpFailed'))
     } finally {
       setIsLoading(false)
     }
@@ -67,28 +69,28 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     if (!otpCode || !newPassword) {
-      setError('Please enter the OTP code and your new password')
+      setError(t('login.validationOtpPassword'))
       return
     }
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match')
+      setError(t('login.passwordsNoMatch'))
       return
     }
     if (newPassword.length < 4) {
-      setError('Password must be at least 4 characters')
+      setError(t('login.passwordMinLength'))
       return
     }
     setIsLoading(true)
     try {
       await authService.resetPassword({ phone, otpCode, newPassword })
-      setSuccess('Password reset successfully! You can now sign in.')
+      setSuccess(t('login.resetSuccess'))
       setView('login')
       setPassword('')
       setOtpCode('')
       setNewPassword('')
       setConfirmPassword('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid or expired OTP code.')
+      setError(err instanceof Error ? err.message : t('login.invalidOtp'))
     } finally {
       setIsLoading(false)
     }
@@ -114,9 +116,9 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 shadow-xl shadow-brand-500/30 mb-6">
             <Heart className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">UNFPA DMP</h1>
-          <p className="text-slate-600 mt-2">Digital Maternity Package Dashboard</p>
-          <p className="text-sm text-slate-500 mt-1">Nogob Zone, Ethiopia</p>
+          <h1 className="text-3xl font-bold text-slate-900">{t('login.brandTitle')}</h1>
+          <p className="text-slate-600 mt-2">{t('login.brandSubtitle')}</p>
+          <p className="text-sm text-slate-500 mt-1">{t('login.brandLocation')}</p>
         </div>
 
         <Card variant="elevated" className="p-8 animate-slide-up backdrop-blur-sm bg-white/80">
@@ -124,8 +126,8 @@ export default function LoginPage() {
           {view === 'login' && (
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="text-center mb-6">
-                <h2 className="text-xl font-semibold text-slate-900">Welcome Back</h2>
-                <p className="text-sm text-slate-500 mt-1">Sign in to continue to your dashboard</p>
+                <h2 className="text-xl font-semibold text-slate-900">{t('login.welcomeBack')}</h2>
+                <p className="text-sm text-slate-500 mt-1">{t('login.signInDescription')}</p>
               </div>
 
               {error && (
@@ -141,18 +143,18 @@ export default function LoginPage() {
 
               <div className="space-y-4">
                 <Input
-                  label="Phone Number"
+                  label={t('login.phoneLabel')}
                   type="tel"
-                  placeholder="+251911234567"
+                  placeholder={t('login.phonePlaceholder')}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   icon={Phone}
                 />
                 <div className="relative">
                   <Input
-                    label="Password"
+                    label={t('login.passwordLabel')}
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
+                    placeholder={t('login.passwordPlaceholder')}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -173,19 +175,19 @@ export default function LoginPage() {
                     className="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
                     defaultChecked
                   />
-                  <span className="text-slate-600">Remember me</span>
+                  <span className="text-slate-600">{t('login.rememberMe')}</span>
                 </label>
                 <button
                   type="button"
                   onClick={() => { setView('forgot'); setError(''); setSuccess('') }}
                   className="text-brand-600 hover:text-brand-700 font-medium"
                 >
-                  Forgot password?
+                  {t('login.forgotPassword')}
                 </button>
               </div>
 
               <Button type="submit" variant="primary" size="lg" className="w-full" isLoading={isLoading}>
-                Sign In
+                {t('login.signIn')}
               </Button>
             </form>
           )}
@@ -195,10 +197,10 @@ export default function LoginPage() {
             <form onSubmit={handleForgotPassword} className="space-y-6">
               <div>
                 <button type="button" onClick={goBack} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4">
-                  <ArrowLeft className="w-4 h-4" /> Back to Sign In
+                  <ArrowLeft className="w-4 h-4" /> {t('login.backToSignIn')}
                 </button>
-                <h2 className="text-xl font-semibold text-slate-900">Forgot Password</h2>
-                <p className="text-sm text-slate-500 mt-1">Enter your phone number and we&apos;ll send you an OTP code</p>
+                <h2 className="text-xl font-semibold text-slate-900">{t('login.forgotPasswordTitle')}</h2>
+                <p className="text-sm text-slate-500 mt-1">{t('login.forgotPasswordDescription')}</p>
               </div>
 
               {error && (
@@ -206,16 +208,16 @@ export default function LoginPage() {
               )}
 
               <Input
-                label="Phone Number"
+                label={t('login.phoneLabel')}
                 type="tel"
-                placeholder="+251911234567"
+                placeholder={t('login.phonePlaceholder')}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 icon={Phone}
               />
 
               <Button type="submit" variant="primary" size="lg" className="w-full" isLoading={isLoading}>
-                Send OTP Code
+                {t('login.sendOtpCode')}
               </Button>
             </form>
           )}
@@ -225,10 +227,13 @@ export default function LoginPage() {
             <form onSubmit={handleResetPassword} className="space-y-6">
               <div>
                 <button type="button" onClick={goBack} className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-4">
-                  <ArrowLeft className="w-4 h-4" /> Back
+                  <ArrowLeft className="w-4 h-4" /> {t('login.back')}
                 </button>
-                <h2 className="text-xl font-semibold text-slate-900">Reset Password</h2>
-                <p className="text-sm text-slate-500 mt-1">Enter the 6-digit OTP sent to <span className="font-medium text-slate-700">{phone}</span></p>
+                <h2 className="text-xl font-semibold text-slate-900">{t('login.resetPasswordTitle')}</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  {t('login.resetPasswordDescriptionPrefix')}{' '}
+                  <span className="font-medium text-slate-700">{phone}</span>
+                </p>
               </div>
 
               {error && (
@@ -240,18 +245,18 @@ export default function LoginPage() {
 
               <div className="space-y-4">
                 <Input
-                  label="OTP Code"
+                  label={t('login.otpCodeLabel')}
                   type="text"
-                  placeholder="123456"
+                  placeholder={t('login.otpPlaceholder')}
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   maxLength={6}
                 />
                 <div className="relative">
                   <Input
-                    label="New Password"
+                    label={t('login.newPasswordLabel')}
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter new password (min 4 characters)"
+                    placeholder={t('login.newPasswordPlaceholder')}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                   />
@@ -264,24 +269,24 @@ export default function LoginPage() {
                   </button>
                 </div>
                 <Input
-                  label="Confirm New Password"
+                  label={t('login.confirmNewPasswordLabel')}
                   type="password"
-                  placeholder="Confirm new password"
+                  placeholder={t('login.confirmNewPasswordPlaceholder')}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
               </div>
 
               <Button type="submit" variant="primary" size="lg" className="w-full" isLoading={isLoading}>
-                Reset Password
+                {t('login.resetPasswordButton')}
               </Button>
             </form>
           )}
         </Card>
 
         <div className="text-center mt-8 text-sm text-slate-500 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <p>Digital Maternity Package v1.0</p>
-          <p className="mt-1">© 2024 UNFPA • Center of Excellence International Consult</p>
+          <p>{t('login.footerVersion')}</p>
+          <p className="mt-1">{t('login.footerCopyright')}</p>
         </div>
       </div>
     </div>

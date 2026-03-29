@@ -1,5 +1,23 @@
 'use client'
 
+/**
+ * API: Messages module — wired to the messaging REST routes via messagesService.
+ *
+ * Used on this page:
+ * - GET  /messages/conversations
+ * - POST /messages/conversations (body: { otherUserId }) — “New conversation”
+ * - GET  /messages/conversations/:id/messages
+ * - POST /messages/conversations/:id/messages (body: { body, attachmentUrl? })
+ * - PATCH /messages/conversations/:id/read
+ *
+ * Defined in messages.service but not called here:
+ * - GET  /messages/conversations/:id (single conversation)
+ * - PATCH /messages/messages/:messageId/read
+ *
+ * UI note: sent vs received styling uses localStorage key `unfpa_user_id`. If login does not set it,
+ * bubble alignment may not match the API’s sender ids.
+ */
+
 import { useState, useEffect, useRef } from 'react'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card } from '@/components/ui/Card'

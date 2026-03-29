@@ -1,5 +1,9 @@
 'use client'
 
+/**
+ * API: None — navigation shortcuts only (links to dashboard routes). No fetch calls.
+ */
+
 import { cn } from '@/lib/utils'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
 import {

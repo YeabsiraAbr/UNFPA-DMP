@@ -3154,16 +3154,16 @@
                   "type": "object",
                   "required": [
                     "userId",
-                    "roleId"
+                    "roleName"
                   ],
                   "properties": {
                     "userId": {
                       "type": "string",
                       "format": "uuid"
                     },
-                    "roleId": {
+                    "roleName": {
                       "type": "string",
-                      "format": "uuid"
+                      "example": "ADMIN"
                     }
                   }
                 }
@@ -3192,16 +3192,16 @@
                   "type": "object",
                   "required": [
                     "userId",
-                    "roleId"
+                    "roleName"
                   ],
                   "properties": {
                     "userId": {
                       "type": "string",
                       "format": "uuid"
                     },
-                    "roleId": {
+                    "roleName": {
                       "type": "string",
-                      "format": "uuid"
+                      "example": "ADMIN"
                     }
                   }
                 }

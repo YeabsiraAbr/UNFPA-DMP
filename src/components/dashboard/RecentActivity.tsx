@@ -1,9 +1,14 @@
 'use client'
 
+/**
+ * API: No dedicated “recent activity” endpoint.
+ * The list is built client-side from GET /patient (via getCachedPatients) — registration events only.
+ * Icons/types (visit, GBV, etc.) are UI labels, not separate API-backed events.
+ */
+
 import { useState, useEffect } from 'react'
 import { cn, formatRelativeTime } from '@/lib/utils'
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card'
-import { Badge } from '../ui/Badge'
 import {
   UserPlus,
   Activity,
@@ -15,7 +20,7 @@ import {
   Loader2,
   Inbox,
 } from 'lucide-react'
-import { getCachedPatients, visitService } from '@/services'
+import { getCachedPatients } from '@/services'
 
 interface ActivityRow {
   id: string

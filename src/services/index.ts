@@ -20,4 +20,5 @@ export { ultrasoundService } from "./ultrasound.service";
 export { analyticsService } from "./analytics.service";
 export { messagesService } from "./messages.service";
 export { profileService } from "./profile.service";
-export { rolesService } from "./roles.service";
+export { rolesService, roleNameForApi, type RoleAssignApiResult } from "./roles.service";
+export { userService } from "./user.service";
