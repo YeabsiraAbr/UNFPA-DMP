@@ -23,8 +23,10 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
+import { useTranslation } from '@/lib/i18n'
 
 export default function DashboardPage() {
+  const { t } = useTranslation()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -45,50 +47,50 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <DashboardLayout title="Dashboard" subtitle="Digital Maternity Package - Nogob Zone, Ethiopia">
-        <LoadingState message="Loading dashboard..." />
+      <DashboardLayout title={t("appCopy.shell.dashboardTitle")} subtitle={t("appCopy.shell.dashboardSubtitle")}>
+        <LoadingState message={t("appCopy.loading.dashboard")} />
       </DashboardLayout>
     )
   }
 
   return (
     <DashboardLayout
-      title="Dashboard"
-      subtitle="Digital Maternity Package - Nogob Zone, Ethiopia"
+      title={t("appCopy.shell.dashboardTitle")}
+      subtitle={t("appCopy.shell.dashboardSubtitle")}
     >
       <div className="flex justify-end mb-4">
         <Button variant="outline" size="md" onClick={() => loadStats()} disabled={loading}>
           <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
-          Refresh data
+          {t("common.refresh")}
         </Button>
       </div>
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <StatsCard
-          title="Total Patients"
+          title={t("appCopy.dashboardHome.statTotalPatients")}
           value={stats?.totalPatients?.toLocaleString() ?? '0'}
-          subtitle="Registered mothers"
+          subtitle={t("appCopy.dashboardHome.statTotalPatientsSub")}
           icon={Users}
           color="brand"
         />
         <StatsCard
-          title="Active Pregnancies"
+          title={t("appCopy.dashboardHome.statActivePregnancies")}
           value={stats?.activePregnancies ?? 0}
-          subtitle="Currently being monitored"
+          subtitle={t("appCopy.dashboardHome.statActivePregnanciesSub")}
           icon={Baby}
           color="purple"
         />
         <StatsCard
-          title="High Risk"
+          title={t("appCopy.dashboardHome.statHighRisk")}
           value={stats?.highRiskCount ?? 0}
-          subtitle="Patients requiring attention"
+          subtitle={t("appCopy.dashboardHome.statHighRiskSub")}
           icon={AlertTriangle}
           color="red"
         />
         <StatsCard
-          title="Today's Appointments"
+          title={t("appCopy.dashboardHome.statTodayAppointments")}
           value={stats?.appointmentsToday ?? 0}
-          subtitle="Scheduled visits"
+          subtitle={t("appCopy.dashboardHome.statTodayAppointmentsSub")}
           icon={Calendar}
           color="emerald"
         />
@@ -97,30 +99,30 @@ export default function DashboardPage() {
       {/* Secondary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <StatsCard
-          title="Total Visits"
+          title={t("appCopy.dashboardHome.statTotalVisits")}
           value={stats?.totalVisits ?? 0}
-          subtitle="All recorded visits"
+          subtitle={t("appCopy.dashboardHome.statTotalVisitsSub")}
           icon={Activity}
           color="brand"
         />
         <StatsCard
-          title="Total Deliveries"
+          title={t("appCopy.dashboardHome.statTotalDeliveries")}
           value={stats?.totalDeliveries ?? 0}
-          subtitle="Delivery records"
+          subtitle={t("appCopy.dashboardHome.statTotalDeliveriesSub")}
           icon={Stethoscope}
           color="purple"
         />
         <StatsCard
-          title="GBV Cases"
+          title={t("appCopy.dashboardHome.statGbvCases")}
           value={stats?.totalGBVCases ?? 0}
-          subtitle="Total reported"
+          subtitle={t("appCopy.dashboardHome.statGbvCasesSub")}
           icon={Shield}
           color="amber"
         />
         <StatsCard
-          title="PNC Visits"
+          title={t("appCopy.dashboardHome.statPncVisits")}
           value={stats?.totalPNCVisits ?? 0}
-          subtitle="Postnatal care"
+          subtitle={t("appCopy.dashboardHome.statPncVisitsSub")}
           icon={ClipboardList}
           color="emerald"
         />
@@ -129,22 +131,22 @@ export default function DashboardPage() {
       {/* Additional Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <StatsCard
-          title="Visits This Month"
+          title={t("appCopy.dashboardHome.statVisitsThisMonth")}
           value={stats?.visitsThisMonth ?? 0}
           icon={Activity}
           color="brand"
         />
         <StatsCard
-          title="Patients This Month"
+          title={t("appCopy.dashboardHome.statPatientsThisMonth")}
           value={stats?.patientsThisMonth ?? 0}
-          subtitle="New registrations"
+          subtitle={t("appCopy.dashboardHome.statPatientsThisMonthSub")}
           icon={Users}
           color="purple"
         />
         <StatsCard
-          title="Upcoming Appointments"
+          title={t("appCopy.dashboardHome.statUpcomingAppointments")}
           value={stats?.upcomingAppointments ?? 0}
-          subtitle="Next 7 days"
+          subtitle={t("appCopy.dashboardHome.statUpcomingAppointmentsSub")}
           icon={Calendar}
           color="emerald"
         />

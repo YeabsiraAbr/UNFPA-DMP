@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -15,6 +16,7 @@ import { Plus, Search, Eye, Edit, Trash2, Shield, Lock, AlertTriangle, RefreshCc
 import { formatDate } from '@/lib/utils'
 
 export default function GBVPage() {
+  const { t } = useTranslation()
   const [reports, setReports] = useState<GBVReport[]>([])
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,7 +67,7 @@ export default function GBVPage() {
     setLoading(false)
   }
 
-  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? 'Unknown'
+  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? t("common.unknown")
 
   const resetCreateForm = () => {
     setCreateForm({ patientId: '', incidentDate: '', referral: false, referralInfo: '', highRisk: false, attachment: null })
@@ -132,7 +134,7 @@ export default function GBVPage() {
   )
 
   return (
-    <DashboardLayout title="GBV Reports" subtitle="Secure gender-based violence case management">
+    <DashboardLayout title={t("appCopy.shell.gbvTitle")} subtitle={t("appCopy.shell.gbvSubtitle")}>
       {/* Restricted Access Warning */}
       <Card className="mb-6 bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200 dark:border-amber-800">
         <CardContent className="p-4">
@@ -154,12 +156,12 @@ export default function GBVPage() {
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center justify-between">
         <div className="w-full sm:w-80">
-          <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input placeholder={t("appCopy.search.patientName")} icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => { clearCache('patients-list'); loadData() }} disabled={loading}>
             <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t("common.refresh")}
           </Button>
           <Button
             variant="outline"
@@ -172,18 +174,18 @@ export default function GBVPage() {
               downloadCsv(`gbv-reports-${new Date().toISOString().slice(0, 10)}.csv`, rows)
             }}
           >
-            <Download className="w-4 h-4" /> Export
+            <Download className="w-4 h-4" /> {t("common.export")}
           </Button>
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4" /> New Case Intake
+            <Plus className="w-4 h-4" /> {t("appCopy.modal.newCaseIntake")}
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <LoadingState message="Loading GBV reports..." />
+        <LoadingState message={t("appCopy.loading.gbv")} />
       ) : filtered.length === 0 ? (
-        <EmptyState message="No GBV reports found" />
+        <EmptyState message={t("appCopy.empty.gbv")} />
       ) : (
         <div className="grid gap-4">
           {filtered.map(report => (
@@ -225,10 +227,10 @@ export default function GBVPage() {
       )}
 
       {/* Create Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => { setShowCreateModal(false); resetCreateForm() }} title="New Case Intake" size="lg">
+      <Modal isOpen={showCreateModal} onClose={() => { setShowCreateModal(false); resetCreateForm() }} title={t("appCopy.modal.newCaseIntake")} size="lg">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("common.patient")}</label>
             <select className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm" value={createForm.patientId} onChange={e => setCreateForm({ ...createForm, patientId: e.target.value })}>
               <option value="">Select a patient...</option>
               {patients.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
@@ -240,7 +242,7 @@ export default function GBVPage() {
             <span className="text-sm text-slate-700 dark:text-slate-300">Referral</span>
           </label>
           {createForm.referral && (
-            <Input label="Referral Information" value={createForm.referralInfo} onChange={e => setCreateForm({ ...createForm, referralInfo: e.target.value })} placeholder="Referral details..." />
+            <Input label={t("appCopy.label.referralInformation")} value={createForm.referralInfo} onChange={e => setCreateForm({ ...createForm, referralInfo: e.target.value })} placeholder="Referral details..." />
           )}
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600" checked={createForm.highRisk} onChange={e => setCreateForm({ ...createForm, highRisk: e.target.checked })} />
@@ -257,13 +259,13 @@ export default function GBVPage() {
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
             <Button variant="primary" onClick={handleCreate} isLoading={saving}>Create Report</Button>
-            <Button variant="ghost" onClick={() => { setShowCreateModal(false); resetCreateForm() }}>Cancel</Button>
+            <Button variant="ghost" onClick={() => { setShowCreateModal(false); resetCreateForm() }}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
 
       {/* Detail Modal */}
-      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="GBV Report Details" size="lg">
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title={t("appCopy.modal.gbvReportDetails")} size="lg">
         {selectedReport && (
           <div className="space-y-4">
             <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 flex items-center gap-2">
@@ -273,11 +275,11 @@ export default function GBVPage() {
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs text-slate-500">Patient</p><p className="font-medium">{getPatientName(selectedReport.patientId)}</p></div>
-              <div><p className="text-xs text-slate-500">Incident Date</p><p className="font-medium">{selectedReport.incidentDate ? formatDate(selectedReport.incidentDate) : 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Referral</p><p className="font-medium">{selectedReport.referral ? 'Yes' : 'No'}</p></div>
-              <div><p className="text-xs text-slate-500">Referral Info</p><p className="font-medium">{selectedReport.referralInfo ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">High Risk</p><p className="font-medium">{selectedReport.highRisk ? 'Yes' : 'No'}</p></div>
+              <div><p className="text-xs text-slate-500">{t("common.patient")}</p><p className="font-medium">{getPatientName(selectedReport.patientId)}</p></div>
+              <div><p className="text-xs text-slate-500">Incident Date</p><p className="font-medium">{selectedReport.incidentDate ? formatDate(selectedReport.incidentDate) : t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Referral</p><p className="font-medium">{selectedReport.referral ? t("common.yes") : t("common.no")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.referralInformation")}</p><p className="font-medium">{selectedReport.referralInfo ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">High Risk</p><p className="font-medium">{selectedReport.highRisk ? t("common.yes") : t("common.no")}</p></div>
               <div><p className="text-xs text-slate-500">Attachment</p><p className="font-medium">{selectedReport.attachment ? 'Uploaded' : 'None'}</p></div>
             </div>
             <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
@@ -285,7 +287,7 @@ export default function GBVPage() {
                 <Edit className="w-4 h-4" /> Update Case
               </Button>
               <Button variant="ghost" onClick={() => handleDelete(selectedReport.id)}>
-                <Trash2 className="w-4 h-4" /> Delete
+                <Trash2 className="w-4 h-4" /> {t("common.delete")}
               </Button>
             </div>
           </div>
@@ -293,7 +295,7 @@ export default function GBVPage() {
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Update GBV Report" size="lg">
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={t("appCopy.modal.updateGbvReport")} size="lg">
         <div className="space-y-4">
           <Input label="Incident Date" type="date" value={editForm.incidentDate} onChange={e => setEditForm({ ...editForm, incidentDate: e.target.value })} />
           <label className="flex items-center gap-2 cursor-pointer">
@@ -301,15 +303,15 @@ export default function GBVPage() {
             <span className="text-sm text-slate-700 dark:text-slate-300">Referral</span>
           </label>
           {editForm.referral && (
-            <Input label="Referral Information" value={editForm.referralInfo} onChange={e => setEditForm({ ...editForm, referralInfo: e.target.value })} placeholder="Referral details..." />
+            <Input label={t("appCopy.label.referralInformation")} value={editForm.referralInfo} onChange={e => setEditForm({ ...editForm, referralInfo: e.target.value })} placeholder="Referral details..." />
           )}
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600" checked={editForm.highRisk} onChange={e => setEditForm({ ...editForm, highRisk: e.target.checked })} />
             <span className="text-sm text-slate-700 dark:text-slate-300">High Risk</span>
           </label>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>Save Changes</Button>
-            <Button variant="ghost" onClick={() => setShowEditModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>{t("common.save")}</Button>
+            <Button variant="ghost" onClick={() => setShowEditModal(false)}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>

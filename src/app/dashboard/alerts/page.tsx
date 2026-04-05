@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -33,6 +34,8 @@ export default function AlertsPage() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [alerts, setAlerts] = useState<Alert[]>([])
+
+  const { t } = useTranslation()
 
   const filteredAlerts = alerts.filter((alert) => {
     const matchesType = typeFilter === 'all' || alert.type === typeFilter
@@ -63,16 +66,16 @@ export default function AlertsPage() {
   }
 
   const priorityConfig = {
-    low: { variant: 'default' as const, label: 'Low' },
-    medium: { variant: 'info' as const, label: 'Medium' },
-    high: { variant: 'warning' as const, label: 'High' },
-    critical: { variant: 'danger' as const, label: 'Critical' },
+    low: { variant: 'default' as const, label: t("alertsPage.low") },
+    medium: { variant: 'info' as const, label: t("alertsPage.medium") },
+    high: { variant: 'warning' as const, label: t("alertsPage.high") },
+    critical: { variant: 'danger' as const, label: t("alertsPage.critical") },
   }
 
   return (
     <DashboardLayout
-      title="Alerts & Notifications"
-      subtitle="System alerts, reminders, and important notifications"
+      title={t("appCopy.shell.alertsTitle")}
+      subtitle={t("appCopy.shell.alertsSubtitle")}
     >
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -83,7 +86,7 @@ export default function AlertsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{alerts.length}</p>
-              <p className="text-sm text-slate-500">Total Alerts</p>
+              <p className="text-sm text-slate-500">{t("alertsPage.totalAlerts")}</p>
             </div>
           </div>
         </Card>
@@ -94,7 +97,7 @@ export default function AlertsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{unreadCount}</p>
-              <p className="text-sm text-slate-500">Unread</p>
+              <p className="text-sm text-slate-500">{t("alertsPage.unread")}</p>
             </div>
           </div>
         </Card>
@@ -108,7 +111,7 @@ export default function AlertsPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{criticalCount}</p>
-              <p className="text-sm text-slate-500">Critical</p>
+              <p className="text-sm text-slate-500">{t("alertsPage.critical")}</p>
             </div>
           </div>
         </Card>
@@ -121,7 +124,7 @@ export default function AlertsPage() {
               <p className="text-2xl font-bold">
                 {alerts.filter((a) => a.acknowledgedAt).length}
               </p>
-              <p className="text-sm text-slate-500">Acknowledged</p>
+              <p className="text-sm text-slate-500">{t("alertsPage.acknowledged")}</p>
             </div>
           </div>
         </Card>
@@ -133,24 +136,24 @@ export default function AlertsPage() {
           <div className="flex gap-3">
             <Select
               options={[
-                { value: 'all', label: 'All Types' },
-                { value: 'risk', label: 'Risk Alerts' },
-                { value: 'appointment', label: 'Appointments' },
-                { value: 'teleconsult', label: 'Teleconsults' },
-                { value: 'gbv', label: 'GBV' },
-                { value: 'sync', label: 'Sync' },
-                { value: 'system', label: 'System' },
+                { value: 'all', label: t("alertsPage.allTypes") },
+                { value: 'risk', label: t("alertsPage.riskAlerts") },
+                { value: 'appointment', label: t("alertsPage.appointments") },
+                { value: 'teleconsult', label: t("alertsPage.teleconsults") },
+                { value: 'gbv', label: t("alertsPage.gbv") },
+                { value: 'sync', label: t("alertsPage.sync") },
+                { value: 'system', label: t("alertsPage.system") },
               ]}
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             />
             <Select
               options={[
-                { value: 'all', label: 'All Priorities' },
-                { value: 'critical', label: 'Critical' },
-                { value: 'high', label: 'High' },
-                { value: 'medium', label: 'Medium' },
-                { value: 'low', label: 'Low' },
+                { value: 'all', label: t("alertsPage.allPriorities") },
+                { value: 'critical', label: t("alertsPage.critical") },
+                { value: 'high', label: t("alertsPage.high") },
+                { value: 'medium', label: t("alertsPage.medium") },
+                { value: 'low', label: t("alertsPage.low") },
               ]}
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
@@ -165,7 +168,7 @@ export default function AlertsPage() {
               }}
             >
               <RefreshCcw className="w-4 h-4" />
-              Reset filters
+              {t("common.refresh")}
             </Button>
             <Button
               variant="outline"
@@ -178,15 +181,15 @@ export default function AlertsPage() {
               disabled={!filteredAlerts.length}
             >
               <Download className="w-4 h-4" />
-              Export
+              {t("common.export")}
             </Button>
             <Button variant="outline" onClick={markAllAsRead}>
               <CheckCheck className="w-4 h-4" />
-              Mark All Read
+              {t("alertsPage.markAllRead")}
             </Button>
             <Button variant="ghost" onClick={() => setAlerts([])}>
               <Trash2 className="w-4 h-4" />
-              Clear All
+              {t("alertsPage.clearAll")}
             </Button>
           </div>
         </div>
@@ -197,7 +200,7 @@ export default function AlertsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="w-5 h-5 text-brand-500" />
-            Notifications
+            {t("appCopy.alertsPage.notificationsCard")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -247,7 +250,7 @@ export default function AlertsPage() {
                           </p>
                           {alert.patientName && (
                             <p className="text-sm text-brand-600 dark:text-brand-400 mt-2">
-                              Patient: {alert.patientName}
+                              {t("common.patient")}: {alert.patientName}
                             </p>
                           )}
                         </div>
@@ -262,7 +265,7 @@ export default function AlertsPage() {
                             className="inline-flex items-center gap-1 text-sm text-brand-600 dark:text-brand-400 hover:underline font-medium"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            Take Action
+                            {t("alertsPage.takeAction")}
                             <ArrowRight className="w-4 h-4" />
                           </a>
                         </div>
@@ -276,7 +279,7 @@ export default function AlertsPage() {
             {filteredAlerts.length === 0 && (
               <div className="text-center py-12 text-slate-500">
                 <Bell className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No alerts available</p>
+                <p>{t("appCopy.empty.alerts")}</p>
               </div>
             )}
           </div>

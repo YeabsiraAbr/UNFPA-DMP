@@ -19,6 +19,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -30,6 +31,7 @@ import { cn } from '@/lib/utils'
 import { MessageSquare, Search, Send, ArrowLeft, Plus, RefreshCcw } from 'lucide-react'
 
 export default function MessagesPage() {
+  const { t } = useTranslation()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
@@ -137,8 +139,8 @@ export default function MessagesPage() {
 
   return (
     <DashboardLayout
-      title="Messages"
-      subtitle="Conversations and messaging"
+      title={t("appCopy.shell.messagesTitle")}
+      subtitle={t("appCopy.shell.messagesSubtitle")}
     >
       <Card padding="none" className="h-[calc(100vh-200px)] flex overflow-hidden">
         {/* Left panel – conversation list */}
@@ -151,7 +153,7 @@ export default function MessagesPage() {
           <div className="p-4 border-b border-slate-200 dark:border-slate-700 space-y-3">
             <div className="flex gap-2">
               <Input
-                placeholder="Search conversations…"
+                placeholder={t("appCopy.search.conversations")}
                 icon={Search}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -177,7 +179,7 @@ export default function MessagesPage() {
             {showNewConversation && (
               <div className="flex gap-2">
                 <Input
-                  placeholder="Enter user ID…"
+                  placeholder={t("appCopy.placeholder.userId")}
                   value={newConversationUserId}
                   onChange={(e) => setNewConversationUserId(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleNewConversation() }}
@@ -197,13 +199,13 @@ export default function MessagesPage() {
 
           <div className="flex-1 overflow-y-auto">
             {loadingConversations ? (
-              <LoadingState message="Loading conversations…" />
+              <LoadingState message={t("messagesPage.loadingConversations")} />
             ) : filteredConversations.length === 0 ? (
-              <EmptyState message={searchQuery ? 'No matching conversations' : 'No conversations yet'} />
+              <EmptyState message={searchQuery ? t("appCopy.empty.conversationsNoMatch") : t("appCopy.empty.conversationsNone")} />
             ) : (
               filteredConversations.map((conv) => {
                 const rec = conv as Record<string, unknown>
-                const name = (rec.otherUserName as string) ?? 'Unknown'
+                const name = (rec.otherUserName as string) ?? t("common.unknown")
                 const lastMsg = (rec.lastMessageBody as string) ?? ''
                 const unread = Boolean(rec.unreadCount)
                 const isSelected = selectedConversation?.id === conv.id
@@ -267,7 +269,7 @@ export default function MessagesPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                    {((selectedConversation as Record<string, unknown>).otherUserName as string) ?? 'Unknown'}
+                    {((selectedConversation as Record<string, unknown>).otherUserName as string) ?? t("common.unknown")}
                   </p>
                 </div>
               </div>
@@ -275,9 +277,9 @@ export default function MessagesPage() {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
                 {loadingMessages ? (
-                  <LoadingState message="Loading messages…" />
+                  <LoadingState message={t("messagesPage.loadingMessages")} />
                 ) : messages.length === 0 ? (
-                  <EmptyState message="No messages yet – start the conversation!" />
+                  <EmptyState message={t("appCopy.empty.messagesThread")} />
                 ) : (
                   messages.map((msg) => {
                     const rec = msg as Record<string, unknown>
@@ -306,7 +308,7 @@ export default function MessagesPage() {
                                 isSent ? 'text-white/80' : 'text-brand-500'
                               )}
                             >
-                              View attachment
+                              {t("messagesPage.viewAttachment")}
                             </a>
                           )}
                         </div>
@@ -320,7 +322,7 @@ export default function MessagesPage() {
               {/* Compose */}
               <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
                 <Input
-                  placeholder="Type a message…"
+                  placeholder={t("appCopy.placeholder.typeMessage")}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -339,7 +341,7 @@ export default function MessagesPage() {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
               <MessageSquare className="w-12 h-12 mb-3 opacity-40" />
-              <p className="text-sm">Select a conversation to start messaging</p>
+              <p className="text-sm">{t("messagesPage.selectConversationPrompt")}</p>
             </div>
           )}
         </div>

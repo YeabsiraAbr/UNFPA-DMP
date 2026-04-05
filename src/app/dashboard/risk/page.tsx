@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -58,56 +59,13 @@ function patientFromHighRisk(hp: HighRiskPatient): Patient {
   }
 }
 
-// Risk rules for demonstration
-const riskRules = [
-  {
-    id: 'r1',
-    name: 'Advanced Maternal Age',
-    description: 'Patient age ≥ 35 years',
-    condition: 'age >= 35',
-    weight: 15,
-    version: '1.0.3',
-  },
-  {
-    id: 'r2',
-    name: 'Grand Multipara',
-    description: 'Gravida ≥ 5',
-    condition: 'gravida >= 5',
-    weight: 20,
-    version: '1.0.3',
-  },
-  {
-    id: 'r3',
-    name: 'Teenage Pregnancy',
-    description: 'Patient age < 18 years',
-    condition: 'age < 18',
-    weight: 25,
-    version: '1.0.3',
-  },
-  {
-    id: 'r4',
-    name: 'Hypertension Risk',
-    description: 'BP systolic ≥ 140 or diastolic ≥ 90',
-    condition: 'bp_systolic >= 140 OR bp_diastolic >= 90',
-    weight: 30,
-    version: '1.0.3',
-  },
-  {
-    id: 'r5',
-    name: 'Previous Cesarean',
-    description: 'History of cesarean section',
-    condition: 'previous_cesarean = true',
-    weight: 15,
-    version: '1.0.3',
-  },
-  {
-    id: 'r6',
-    name: 'Anemia',
-    description: 'Hemoglobin < 11 g/dL',
-    condition: 'hemoglobin < 11',
-    weight: 10,
-    version: '1.0.3',
-  },
+const riskRulesDef = [
+  { id: 'r1', nameKey: 'riskPage.advancedMaternalAge', descKey: 'riskPage.advancedMaternalAgeDesc', condition: 'age >= 35', weight: 15, version: '1.0.3' },
+  { id: 'r2', nameKey: 'riskPage.grandMultipara', descKey: 'riskPage.grandMultiparaDesc', condition: 'gravida >= 5', weight: 20, version: '1.0.3' },
+  { id: 'r3', nameKey: 'riskPage.teenagePregnancy', descKey: 'riskPage.teenagePregnancyDesc', condition: 'age < 18', weight: 25, version: '1.0.3' },
+  { id: 'r4', nameKey: 'riskPage.hypertensionRisk', descKey: 'riskPage.hypertensionRiskDesc', condition: 'bp_systolic >= 140 OR bp_diastolic >= 90', weight: 30, version: '1.0.3' },
+  { id: 'r5', nameKey: 'riskPage.previousCesarean', descKey: 'riskPage.previousCesareanDesc', condition: 'previous_cesarean = true', weight: 15, version: '1.0.3' },
+  { id: 'r6', nameKey: 'riskPage.anemia', descKey: 'riskPage.anemiaDesc', condition: 'hemoglobin < 11', weight: 10, version: '1.0.3' },
 ]
 
 export default function RiskAssessmentPage() {
@@ -116,6 +74,8 @@ export default function RiskAssessmentPage() {
   const [loading, setLoading] = useState(true)
 
   const [highRiskPatients, setHighRiskPatients] = useState<Patient[]>([])
+
+  const { t } = useTranslation()
 
   const loadHighRisk = () => {
     setLoading(true)
@@ -159,18 +119,18 @@ export default function RiskAssessmentPage() {
   if (loading) {
     return (
       <DashboardLayout
-        title="AI Risk Assessment"
-        subtitle="Rule-based risk analysis and patient flagging"
+        title={t("appCopy.shell.riskTitle")}
+        subtitle={t("appCopy.shell.riskSubtitle")}
       >
-        <LoadingState message="Loading risk data…" />
+        <LoadingState message={t("appCopy.loading.risk")} />
       </DashboardLayout>
     )
   }
 
   return (
     <DashboardLayout
-      title="AI Risk Assessment"
-      subtitle="Rule-based risk analysis and patient flagging"
+      title={t("appCopy.shell.riskTitle")}
+      subtitle={t("appCopy.shell.riskSubtitle")}
     >
       {/* Info Banner */}
       <Card className="mb-6 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-800">
@@ -181,11 +141,10 @@ export default function RiskAssessmentPage() {
             </div>
             <div>
               <h3 className="font-semibold text-purple-800 dark:text-purple-300">
-                AI-Assisted Risk Assessment
+                {t("riskPage.bannerTitle")}
               </h3>
               <p className="text-sm text-purple-700 dark:text-purple-400 mt-1">
-                Risk scores are calculated using rule-based logic analyzing patient data, vitals, and history.
-                All flags are suggestions for clinician review - not diagnoses. Current rule version: 1.0.3
+                {t("riskPage.bannerDescription")}
               </p>
             </div>
           </div>
@@ -201,7 +160,7 @@ export default function RiskAssessmentPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{highRiskPatients.length}</p>
-              <p className="text-sm text-slate-500">Assessed</p>
+              <p className="text-sm text-slate-500">{t("riskPage.assessed")}</p>
             </div>
           </div>
         </Card>
@@ -214,7 +173,7 @@ export default function RiskAssessmentPage() {
               <p className="text-2xl font-bold">
                 {highRiskPatients.filter((p) => p.riskLevel === 'low').length}
               </p>
-              <p className="text-sm text-slate-500">Low Risk</p>
+              <p className="text-sm text-slate-500">{t("riskPage.lowRisk")}</p>
             </div>
           </div>
         </Card>
@@ -227,7 +186,7 @@ export default function RiskAssessmentPage() {
               <p className="text-2xl font-bold">
                 {highRiskPatients.filter((p) => p.riskLevel === 'high').length}
               </p>
-              <p className="text-sm text-slate-500">High Risk</p>
+              <p className="text-sm text-slate-500">{t("riskPage.highRisk")}</p>
             </div>
           </div>
         </Card>
@@ -240,7 +199,7 @@ export default function RiskAssessmentPage() {
               <p className="text-2xl font-bold">
                 {highRiskPatients.filter((p) => p.riskLevel === 'critical').length}
               </p>
-              <p className="text-sm text-slate-500">Critical</p>
+              <p className="text-sm text-slate-500">{t("riskPage.critical")}</p>
             </div>
           </div>
         </Card>
@@ -253,11 +212,11 @@ export default function RiskAssessmentPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-amber-500" />
-                Flagged Patients
+                {t("appCopy.riskPage.flaggedPatients")}
               </CardTitle>
               <Button variant="ghost" size="sm" onClick={() => loadHighRisk()} disabled={loading}>
                 <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
-                Refresh
+                {t("common.refresh")}
               </Button>
             </CardHeader>
             <CardContent>
@@ -309,7 +268,7 @@ export default function RiskAssessmentPage() {
                               {patient.riskScore}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-500">Risk Score</p>
+                          <p className="text-xs text-slate-500">{t("riskPage.riskScore")}</p>
                         </div>
                       </div>
 
@@ -347,20 +306,20 @@ export default function RiskAssessmentPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Brain className="w-5 h-5 text-purple-500" />
-                Active Rules
+                {t("appCopy.riskPage.activeRules")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {riskRules.map((rule) => (
+                {riskRulesDef.map((rule) => (
                   <div
                     key={rule.id}
                     className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800"
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <h4 className="font-medium text-sm">{rule.name}</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">{rule.description}</p>
+                        <h4 className="font-medium text-sm">{t(rule.nameKey)}</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">{t(rule.descKey)}</p>
                       </div>
                       <Badge variant="default" size="sm">+{rule.weight}</Badge>
                     </div>
@@ -369,7 +328,7 @@ export default function RiskAssessmentPage() {
               </div>
               <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <p className="text-xs text-slate-500">
-                  Rule Version: 1.0.3 • Last updated: Nov 2024
+                  {t("riskPage.ruleVersionFooter")}
                 </p>
               </div>
             </CardContent>
@@ -377,25 +336,25 @@ export default function RiskAssessmentPage() {
 
           <Card variant="elevated">
             <CardHeader>
-              <CardTitle>Risk Score Legend</CardTitle>
+              <CardTitle>{t("appCopy.riskPage.riskScoreLegend")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full bg-emerald-500" />
-                  <span className="text-sm">0-24: Low Risk</span>
+                  <span className="text-sm">{t("appCopy.riskPage.legendLow")}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full bg-yellow-500" />
-                  <span className="text-sm">25-49: Medium Risk</span>
+                  <span className="text-sm">{t("appCopy.riskPage.legendMedium")}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full bg-orange-500" />
-                  <span className="text-sm">50-74: High Risk</span>
+                  <span className="text-sm">{t("appCopy.riskPage.legendHigh")}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-4 h-4 rounded-full bg-red-500" />
-                  <span className="text-sm">75-100: Critical</span>
+                  <span className="text-sm">{t("appCopy.riskPage.legendCritical")}</span>
                 </div>
               </div>
             </CardContent>
@@ -407,7 +366,7 @@ export default function RiskAssessmentPage() {
       <Modal
         isOpen={showRiskModal}
         onClose={() => setShowRiskModal(false)}
-        title="Risk Assessment Details"
+        title={t("appCopy.modal.riskAssessmentDetails")}
         size="lg"
       >
         {selectedPatient && (
@@ -426,7 +385,7 @@ export default function RiskAssessmentPage() {
             {/* Risk Score */}
             <div className="p-6 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Calculated Risk Score</h3>
+                <h3 className="text-lg font-semibold">{t("riskPage.calculatedRiskScore")}</h3>
                 <Badge
                   variant={getRiskBadge(selectedPatient.riskLevel).variant}
                   size="md"
@@ -455,7 +414,7 @@ export default function RiskAssessmentPage() {
 
             {/* Triggered Rules */}
             <div>
-              <h4 className="font-semibold mb-3">Triggered Risk Factors</h4>
+              <h4 className="font-semibold mb-3">{t("riskPage.triggeredRiskFactors")}</h4>
               <div className="space-y-2">
                 {selectedPatient.riskFactors.map((factor, index) => (
                   <div
@@ -477,9 +436,7 @@ export default function RiskAssessmentPage() {
               <div className="flex items-start gap-2">
                 <Info className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-purple-700 dark:text-purple-400">
-                  <strong>Note:</strong> This risk assessment is generated by rule-based analysis and is
-                  intended as a clinical decision support tool only. All flags should be reviewed and
-                  validated by a qualified healthcare provider.
+                  <strong>{t("riskPage.note")}</strong> {t("riskPage.disclaimer")}
                 </div>
               </div>
             </div>
@@ -488,11 +445,11 @@ export default function RiskAssessmentPage() {
             <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
               <Button variant="primary">
                 <FileText className="w-4 h-4" />
-                View Full Record
+                {t("riskPage.viewFullRecord")}
               </Button>
               <Button variant="outline">
                 <XCircle className="w-4 h-4" />
-                Override Flag
+                {t("riskPage.overrideFlag")}
               </Button>
             </div>
           </div>

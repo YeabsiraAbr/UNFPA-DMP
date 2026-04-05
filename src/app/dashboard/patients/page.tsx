@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -54,6 +55,7 @@ const syncBadgeVariant = {
 }
 
 export default function PatientsPage() {
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [riskFilter, setRiskFilter] = useState('all')
   const [clinicFilter, setClinicFilter] = useState('all')
@@ -372,15 +374,15 @@ export default function PatientsPage() {
   }, [selectedPatient])
 
   if (loading) return (
-    <DashboardLayout title="Patient Management" subtitle="Register, view, and manage maternal patient records">
-      <LoadingState message="Loading patients..." />
+    <DashboardLayout title={t("appCopy.shell.patientsTitle")} subtitle={t("appCopy.shell.patientsSubtitle")}>
+      <LoadingState message={t("appCopy.loading.patients")} />
     </DashboardLayout>
   )
 
   return (
     <DashboardLayout
-      title="Patient Management"
-      subtitle="Register, view, and manage maternal patient records"
+      title={t("appCopy.shell.patientsTitle")}
+      subtitle={t("appCopy.shell.patientsSubtitle")}
     >
       {/* Filters & Actions */}
       <Card className="mb-6">
@@ -389,7 +391,7 @@ export default function PatientsPage() {
             <div className="flex flex-1 gap-3 flex-wrap">
               <div className="w-64">
                 <Input
-                  placeholder="Search patients..."
+                  placeholder={t("appCopy.search.patients")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   icon={Search}
@@ -397,18 +399,18 @@ export default function PatientsPage() {
               </div>
               <Select
                 options={[
-                  { value: 'all', label: 'All Risk Levels' },
-                  { value: 'low', label: 'Low Risk' },
-                  { value: 'medium', label: 'Medium Risk' },
-                  { value: 'high', label: 'High Risk' },
-                  { value: 'critical', label: 'Critical' },
+                  { value: 'all', label: t("appCopy.filter.allRiskLevels") },
+                  { value: 'low', label: t("appCopy.filter.lowRisk") },
+                  { value: 'medium', label: t("appCopy.filter.mediumRisk") },
+                  { value: 'high', label: t("appCopy.filter.highRisk") },
+                  { value: 'critical', label: t("appCopy.filter.critical") },
                 ]}
                 value={riskFilter}
                 onChange={(e) => setRiskFilter(e.target.value)}
               />
               <Select
                 options={[
-                  { value: 'all', label: 'All Clinics' },
+                  { value: 'all', label: t("appCopy.filter.allClinics") },
                 ]}
                 value={clinicFilter}
                 onChange={(e) => setClinicFilter(e.target.value)}
@@ -425,7 +427,7 @@ export default function PatientsPage() {
                 disabled={loading}
               >
                 <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
-                Refresh
+                {t("common.refresh")}
               </Button>
               <Button
                 variant="outline"
@@ -447,15 +449,15 @@ export default function PatientsPage() {
                 disabled={!filteredPatients.length}
               >
                 <Download className="w-4 h-4" />
-                Export
+                {t("common.export")}
               </Button>
               <Button variant="primary" size="md" onClick={() => setShowCreateModal(true)}>
                 <Plus className="w-4 h-4" />
-                New Patient
+                {t("appCopy.patientsPage.newPatient")}
               </Button>
               <Button variant="outline" size="md" onClick={() => setShowRegisterModal(true)}>
                 <ClipboardList className="w-4 h-4" />
-                Register Client (ANC)
+                {t("appCopy.patientsPage.registerClientAnc")}
               </Button>
             </div>
           </div>
@@ -473,7 +475,7 @@ export default function PatientsPage() {
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
                 {filteredPatients.length}
               </p>
-              <p className="text-sm text-slate-500">Total Patients</p>
+              <p className="text-sm text-slate-500">{t("appCopy.patientsPage.totalPatientsLabel")}</p>
             </div>
           </div>
         </Card>
@@ -486,7 +488,7 @@ export default function PatientsPage() {
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
                 {filteredPatients.filter((p) => p.pregnancyStatus === 'pregnant').length}
               </p>
-              <p className="text-sm text-slate-500">Active Pregnancies</p>
+              <p className="text-sm text-slate-500">{t("appCopy.patientsPage.activePregnanciesLabel")}</p>
             </div>
           </div>
         </Card>
@@ -499,7 +501,7 @@ export default function PatientsPage() {
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
                 {filteredPatients.filter((p) => p.riskLevel === 'high' || p.riskLevel === 'critical').length}
               </p>
-              <p className="text-sm text-slate-500">High Risk</p>
+              <p className="text-sm text-slate-500">{t("appCopy.patientsPage.highRiskLabel")}</p>
             </div>
           </div>
         </Card>
@@ -512,7 +514,7 @@ export default function PatientsPage() {
               <p className="text-2xl font-bold text-slate-900 dark:text-white">
                 {filteredPatients.filter((p) => p.syncStatus === 'pending').length}
               </p>
-              <p className="text-sm text-slate-500">Pending Sync</p>
+              <p className="text-sm text-slate-500">{t("patientsPage.pendingSync")}</p>
             </div>
           </div>
         </Card>
@@ -524,13 +526,13 @@ export default function PatientsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Patient</TableHead>
-                <TableHead>ID Number</TableHead>
-                <TableHead>Age</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Risk Level</TableHead>
-                <TableHead>Last Visit</TableHead>
-                <TableHead>Sync</TableHead>
+                <TableHead>{t("patientsPage.colPatient")}</TableHead>
+                <TableHead>{t("patientsPage.colIdNumber")}</TableHead>
+                <TableHead>{t("patientsPage.colAge")}</TableHead>
+                <TableHead>{t("patientsPage.colStatus")}</TableHead>
+                <TableHead>{t("patientsPage.colRiskLevel")}</TableHead>
+                <TableHead>{t("patientsPage.colLastVisit")}</TableHead>
+                <TableHead>{t("patientsPage.colSync")}</TableHead>
                 <TableHead className="w-12"></TableHead>
               </TableRow>
             </TableHeader>
@@ -560,8 +562,8 @@ export default function PatientsPage() {
                       variant={patient.pregnancyStatus === 'pregnant' ? 'info' : 'default'}
                       size="sm"
                     >
-                      {patient.pregnancyStatus === 'pregnant' ? 'Pregnant' : 
-                       patient.pregnancyStatus === 'postpartum' ? 'Postpartum' : 'Not Pregnant'}
+                      {patient.pregnancyStatus === 'pregnant' ? t("patientsPage.pregnant") : 
+                       patient.pregnancyStatus === 'postpartum' ? t("patientsPage.postpartum") : t("patientsPage.notPregnant")}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -575,7 +577,7 @@ export default function PatientsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-sm text-slate-500">
-                    {patient.lastVisit ? formatRelativeTime(patient.lastVisit) : 'Never'}
+                    {patient.lastVisit ? formatRelativeTime(patient.lastVisit) : t("common.never")}
                   </TableCell>
                   <TableCell>
                     <Badge variant={syncBadgeVariant[patient.syncStatus]} size="sm">
@@ -605,10 +607,10 @@ export default function PatientsPage() {
         {selectedPatient && (
           <Tabs defaultValue="overview">
             <TabsList className="mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="visits">Visits ({patientVisits.length})</TabsTrigger>
-              <TabsTrigger value="risk">Risk Assessment</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="overview">{t("patientsPage.tabOverview")}</TabsTrigger>
+              <TabsTrigger value="visits">{t("patientsPage.tabVisits")} ({patientVisits.length})</TabsTrigger>
+              <TabsTrigger value="risk">{t("patientsPage.tabRiskAssessment")}</TabsTrigger>
+              <TabsTrigger value="history">{t("patientsPage.tabHistory")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -616,31 +618,31 @@ export default function PatientsPage() {
                 {/* Basic Info */}
                 <div className="space-y-4">
                   <h4 className="font-semibold text-slate-900 dark:text-white">
-                    Personal Information
+                    {t("patientsPage.personalInformation")}
                   </h4>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 text-sm">
                       <User className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-500">Age:</span>
-                      <span className="text-slate-900 dark:text-white">{selectedPatient.age} years</span>
+                      <span className="text-slate-500">{t("patientsPage.age")}</span>
+                      <span className="text-slate-900 dark:text-white">{selectedPatient.age} {t("common.years")}</span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <Calendar className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-500">DOB:</span>
+                      <span className="text-slate-500">{t("patientsPage.dob")}</span>
                       <span className="text-slate-900 dark:text-white">
                         {formatDate(selectedPatient.dateOfBirth)}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <Phone className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-500">Phone:</span>
+                      <span className="text-slate-500">{t("patientsPage.phoneLabel")}</span>
                       <span className="text-slate-900 dark:text-white">
-                        {selectedPatient.phoneNumber || 'N/A'}
+                        {selectedPatient.phoneNumber || t("common.na")}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <MapPin className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-500">Address:</span>
+                      <span className="text-slate-500">{t("patientsPage.address")}</span>
                       <span className="text-slate-900 dark:text-white">
                         {selectedPatient.address}, {selectedPatient.village}
                       </span>
@@ -651,27 +653,27 @@ export default function PatientsPage() {
                 {/* Obstetric Info */}
                 <div className="space-y-4">
                   <h4 className="font-semibold text-slate-900 dark:text-white">
-                    Obstetric Information
+                    {t("patientsPage.obstetricInformation")}
                   </h4>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 text-sm">
                       <Baby className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-500">G/P:</span>
+                      <span className="text-slate-500">{t("patientsPage.gp")}</span>
                       <span className="text-slate-900 dark:text-white">
                         G{selectedPatient.gravida}P{selectedPatient.para}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 text-sm">
                       <Heart className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-500">Blood Type:</span>
+                      <span className="text-slate-500">{t("patientsPage.bloodType")}</span>
                       <span className="text-slate-900 dark:text-white">
-                        {selectedPatient.bloodType || 'Unknown'}
+                        {selectedPatient.bloodType || t("common.unknown")}
                       </span>
                     </div>
                     {selectedPatient.lmpDate && (
                       <div className="flex items-center gap-3 text-sm">
                         <Calendar className="w-4 h-4 text-slate-400" />
-                        <span className="text-slate-500">LMP:</span>
+                        <span className="text-slate-500">{t("patientsPage.lmp")}</span>
                         <span className="text-slate-900 dark:text-white">
                           {formatDate(selectedPatient.lmpDate)}
                         </span>
@@ -680,7 +682,7 @@ export default function PatientsPage() {
                     {selectedPatient.eddDate && (
                       <div className="flex items-center gap-3 text-sm">
                         <Clock className="w-4 h-4 text-slate-400" />
-                        <span className="text-slate-500">EDD:</span>
+                        <span className="text-slate-500">{t("patientsPage.edd")}</span>
                         <span className="text-slate-900 dark:text-white">
                           {formatDate(selectedPatient.eddDate)}
                         </span>
@@ -692,13 +694,13 @@ export default function PatientsPage() {
                 {/* Risk Info */}
                 <div className="md:col-span-2">
                   <h4 className="font-semibold text-slate-900 dark:text-white mb-4">
-                    Risk Assessment
+                    {t("patientsPage.riskAssessment")}
                   </h4>
                   <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
                         <Activity className="w-5 h-5 text-slate-400" />
-                        <span className="font-medium">Risk Score</span>
+                        <span className="font-medium">{t("patientsPage.riskScore")}</span>
                       </div>
                       <span className="text-2xl font-bold">{selectedPatient.riskScore}/100</span>
                     </div>
@@ -721,15 +723,15 @@ export default function PatientsPage() {
               <div className="flex gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
                 <Button variant="primary" onClick={openEditModal}>
                   <Edit className="w-4 h-4" />
-                  Edit Patient
+                  {t("patientsPage.editPatient")}
                 </Button>
                 <Button variant="outline" onClick={() => setShowScheduleModal(true)}>
                   <Calendar className="w-4 h-4" />
-                  Schedule Visit
+                  {t("patientsPage.scheduleVisit")}
                 </Button>
                 <Button variant="danger" onClick={handleDeletePatient}>
                   <Trash2 className="w-4 h-4" />
-                  Delete Patient
+                  {t("common.delete")}
                 </Button>
               </div>
             </TabsContent>
@@ -760,22 +762,22 @@ export default function PatientsPage() {
                       </div>
                       <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <span className="text-slate-500">BP</span>
+                          <span className="text-slate-500">{t("patientsPage.bp")}</span>
                           <p className="font-medium">
                             {visit.vitals.bloodPressureSystolic}/{visit.vitals.bloodPressureDiastolic}
                           </p>
                         </div>
                         <div>
-                          <span className="text-slate-500">Weight</span>
-                          <p className="font-medium">{visit.vitals.weight} kg</p>
+                          <span className="text-slate-500">{t("patientsPage.weight")}</span>
+                          <p className="font-medium">{visit.vitals.weight} {t("units.kg")}</p>
                         </div>
                         <div>
-                          <span className="text-slate-500">FHR</span>
-                          <p className="font-medium">{visit.vitals.fetalHeartRate || 'N/A'} bpm</p>
+                          <span className="text-slate-500">{t("patientsPage.fhr")}</span>
+                          <p className="font-medium">{visit.vitals.fetalHeartRate || t("common.na")} {t("units.bpm")}</p>
                         </div>
                         <div>
-                          <span className="text-slate-500">Fundal Height</span>
-                          <p className="font-medium">{visit.vitals.fundalHeight || 'N/A'} cm</p>
+                          <span className="text-slate-500">{t("patientsPage.fundalHeight")}</span>
+                          <p className="font-medium">{visit.vitals.fundalHeight || t("common.na")} {t("units.cm")}</p>
                         </div>
                       </div>
                       {visit.riskFlags.length > 0 && (
@@ -807,7 +809,7 @@ export default function PatientsPage() {
                   ))
                 ) : (
                   <div className="text-center py-8 text-slate-500">
-                    No visits recorded yet
+                    {t("patientsPage.noVisitsRecorded")}
                   </div>
                 )}
               </div>
@@ -817,7 +819,7 @@ export default function PatientsPage() {
               <div className="space-y-6">
                 <div className="p-6 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Overall Risk Score</h3>
+                    <h3 className="text-lg font-semibold">{t("patientsPage.overallRiskScore")}</h3>
                     <Badge
                       variant={riskBadgeVariant[selectedPatient.riskLevel]}
                       size="md"
@@ -840,7 +842,7 @@ export default function PatientsPage() {
                 </div>
 
                 <div>
-                  <h4 className="font-semibold mb-3">Active Risk Factors</h4>
+                  <h4 className="font-semibold mb-3">{t("patientsPage.activeRiskFactors")}</h4>
                   <div className="space-y-2">
                     {selectedPatient.riskFactors.map((factor, index) => (
                       <div
@@ -861,7 +863,7 @@ export default function PatientsPage() {
 
             <TabsContent value="history">
               <div className="text-center py-8 text-slate-500">
-                Patient history timeline coming soon...
+                {t("patientsPage.historyComingSoon")}
               </div>
             </TabsContent>
           </Tabs>
@@ -872,74 +874,74 @@ export default function PatientsPage() {
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Register New Patient"
+        title={t("appCopy.modal.registerNewPatient")}
         size="xl"
       >
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                Full Name <span className="text-red-500">*</span>
+                {t("patientsPage.labelFullName")} <span className="text-red-500">*</span>
               </label>
               <Input
-                placeholder="Enter full name"
+                placeholder={t("appCopy.placeholder.fullName")}
                 value={createForm.fullName}
                 onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.labelPhoneNumber")}</label>
               <Input
-                placeholder="Phone number"
+                placeholder={t("appCopy.placeholder.phone")}
                 value={createForm.phoneNumber}
                 onChange={(e) => setCreateForm({ ...createForm, phoneNumber: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Age</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.colAge")}</label>
               <Input
-                placeholder="Age"
+                placeholder={t("appCopy.placeholder.age")}
                 type="number"
                 value={createForm.age}
                 onChange={(e) => setCreateForm({ ...createForm, age: e.target.value })}
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Address</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.address")}</label>
               <Input
-                placeholder="Address"
+                placeholder={t("appCopy.placeholder.address")}
                 value={createForm.address}
                 onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Village / Woreda</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.labelVillageWoreda")}</label>
               <Input
-                placeholder="Village or woreda"
+                placeholder={t("appCopy.placeholder.village")}
                 value={createForm.village}
                 onChange={(e) => setCreateForm({ ...createForm, village: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ID Number</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.colIdNumber")}</label>
               <Input
-                placeholder="ID number"
+                placeholder={t("appCopy.placeholder.idNumber")}
                 value={createForm.idNumber}
                 onChange={(e) => setCreateForm({ ...createForm, idNumber: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Emergency Contact</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.labelEmergencyContact")}</label>
               <Input
-                placeholder="Emergency contact name"
+                placeholder={t("appCopy.placeholder.emergencyName")}
                 value={createForm.emergencyContact}
                 onChange={(e) => setCreateForm({ ...createForm, emergencyContact: e.target.value })}
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Emergency Phone</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.labelEmergencyPhone")}</label>
               <Input
-                placeholder="Emergency phone number"
+                placeholder={t("appCopy.placeholder.emergencyPhone")}
                 value={createForm.emergencyPhone}
                 onChange={(e) => setCreateForm({ ...createForm, emergencyPhone: e.target.value })}
               />
@@ -947,36 +949,36 @@ export default function PatientsPage() {
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
             <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="primary"
               onClick={handleCreatePatient}
               disabled={!createForm.fullName.trim() || creating}
             >
-              {creating ? 'Registering...' : 'Register Patient'}
+              {creating ? `${t("common.loading")}` : t("appCopy.patientsPage.newPatient")}
             </Button>
           </div>
         </div>
       </Modal>
 
       {/* Edit Patient Modal */}
-      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Patient" size="lg">
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={t("appCopy.modal.editPatient")} size="lg">
         <div className="space-y-4">
-          <Input label="Full Name" value={editForm.fullName} onChange={e => setEditForm({ ...editForm, fullName: e.target.value })} />
+          <Input label={t("patientsPage.labelFullName")} value={editForm.fullName} onChange={e => setEditForm({ ...editForm, fullName: e.target.value })} />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Phone Number" value={editForm.phoneNumber} onChange={e => setEditForm({ ...editForm, phoneNumber: e.target.value })} />
-            <Input label="Age" type="number" value={editForm.age} onChange={e => setEditForm({ ...editForm, age: e.target.value })} />
+            <Input label={t("patientsPage.labelPhoneNumber")} value={editForm.phoneNumber} onChange={e => setEditForm({ ...editForm, phoneNumber: e.target.value })} />
+            <Input label={t("patientsPage.colAge")} type="number" value={editForm.age} onChange={e => setEditForm({ ...editForm, age: e.target.value })} />
           </div>
-          <Input label="Address" value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} />
-          <Input label="Village / Woreda" value={editForm.village} onChange={e => setEditForm({ ...editForm, village: e.target.value })} />
+          <Input label={t("patientsPage.address")} value={editForm.address} onChange={e => setEditForm({ ...editForm, address: e.target.value })} />
+          <Input label={t("patientsPage.labelVillageWoreda")} value={editForm.village} onChange={e => setEditForm({ ...editForm, village: e.target.value })} />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Emergency Contact" value={editForm.emergencyContact} onChange={e => setEditForm({ ...editForm, emergencyContact: e.target.value })} />
-            <Input label="Emergency Phone" value={editForm.emergencyPhone} onChange={e => setEditForm({ ...editForm, emergencyPhone: e.target.value })} />
+            <Input label={t("patientsPage.labelEmergencyContact")} value={editForm.emergencyContact} onChange={e => setEditForm({ ...editForm, emergencyContact: e.target.value })} />
+            <Input label={t("patientsPage.labelEmergencyPhone")} value={editForm.emergencyPhone} onChange={e => setEditForm({ ...editForm, emergencyPhone: e.target.value })} />
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleEditPatient} isLoading={editing}>Save Changes</Button>
-            <Button variant="ghost" onClick={() => setShowEditModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleEditPatient} isLoading={editing}>{t("patientsPage.saveChangesButton")}</Button>
+            <Button variant="ghost" onClick={() => setShowEditModal(false)}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
@@ -991,14 +993,14 @@ export default function PatientsPage() {
             <Input label="Weight (kg)" type="number" step="0.1" value={scheduleForm.weight} onChange={e => setScheduleForm({ ...scheduleForm, weight: e.target.value })} />
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleScheduleVisit} isLoading={scheduling}>Schedule Visit</Button>
-            <Button variant="ghost" onClick={() => setShowScheduleModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleScheduleVisit} isLoading={scheduling}>{t("patientsPage.scheduleVisit")}</Button>
+            <Button variant="ghost" onClick={() => setShowScheduleModal(false)}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
 
       {/* Edit Visit Modal */}
-      <Modal isOpen={showEditVisitModal} onClose={() => setShowEditVisitModal(false)} title="Edit Visit" size="md">
+      <Modal isOpen={showEditVisitModal} onClose={() => setShowEditVisitModal(false)} title={t("appCopy.modal.editVisit")} size="md">
         <div className="space-y-4">
           <Input label="Visit Date" type="datetime-local" value={editVisitForm.visitDate} onChange={e => setEditVisitForm({ ...editVisitForm, visitDate: e.target.value })} />
           <Input label="Blood Pressure" placeholder="e.g. 120/80" value={editVisitForm.bloodPressure} onChange={e => setEditVisitForm({ ...editVisitForm, bloodPressure: e.target.value })} />
@@ -1007,8 +1009,8 @@ export default function PatientsPage() {
             <Input label="Weight (kg)" type="number" step="0.1" value={editVisitForm.weight} onChange={e => setEditVisitForm({ ...editVisitForm, weight: e.target.value })} />
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleEditVisit} isLoading={editingVisit}>Save Changes</Button>
-            <Button variant="ghost" onClick={() => setShowEditVisitModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleEditVisit} isLoading={editingVisit}>{t("patientsPage.saveChangesButton")}</Button>
+            <Button variant="ghost" onClick={() => setShowEditVisitModal(false)}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
@@ -1017,77 +1019,77 @@ export default function PatientsPage() {
       <Modal
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
-        title="Register Client (ANC)"
+        title={t("appCopy.modal.registerClientAnc")}
         description="Creates a patient record and ANC registration in one step."
         size="xl"
       >
         <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
           <div>
-            <h4 className="font-semibold text-slate-900 dark:text-white mb-3">Personal Information</h4>
+            <h4 className="font-semibold text-slate-900 dark:text-white mb-3">{t("patientsPage.personalInformation")}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Full Name <span className="text-red-500">*</span>
+                  {t("patientsPage.labelFullName")} <span className="text-red-500">*</span>
                 </label>
                 <Input
-                  placeholder="Enter full name"
+                  placeholder={t("appCopy.placeholder.fullName")}
                   value={registerForm.fullName}
                   onChange={(e) => setRegisterForm({ ...registerForm, fullName: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone Number</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.labelPhoneNumber")}</label>
                 <Input
-                  placeholder="Phone number"
+                  placeholder={t("appCopy.placeholder.phone")}
                   value={registerForm.phoneNumber}
                   onChange={(e) => setRegisterForm({ ...registerForm, phoneNumber: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Age</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.colAge")}</label>
                 <Input
                   type="number"
-                  placeholder="Age"
+                  placeholder={t("appCopy.placeholder.age")}
                   value={registerForm.age}
                   onChange={(e) => setRegisterForm({ ...registerForm, age: e.target.value })}
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Address</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.address")}</label>
                 <Input
-                  placeholder="Address"
+                  placeholder={t("appCopy.placeholder.address")}
                   value={registerForm.address}
                   onChange={(e) => setRegisterForm({ ...registerForm, address: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Village / Woreda</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.labelVillageWoreda")}</label>
                 <Input
-                  placeholder="Village or woreda"
+                  placeholder={t("appCopy.placeholder.village")}
                   value={registerForm.village}
                   onChange={(e) => setRegisterForm({ ...registerForm, village: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ID Number</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.colIdNumber")}</label>
                 <Input
-                  placeholder="ID number"
+                  placeholder={t("appCopy.placeholder.idNumber")}
                   value={registerForm.idNumber}
                   onChange={(e) => setRegisterForm({ ...registerForm, idNumber: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Emergency Contact</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.labelEmergencyContact")}</label>
                 <Input
-                  placeholder="Emergency contact name"
+                  placeholder={t("appCopy.placeholder.emergencyName")}
                   value={registerForm.emergencyContact}
                   onChange={(e) => setRegisterForm({ ...registerForm, emergencyContact: e.target.value })}
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Emergency Phone</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.labelEmergencyPhone")}</label>
                 <Input
-                  placeholder="Emergency phone number"
+                  placeholder={t("appCopy.placeholder.emergencyPhone")}
                   value={registerForm.emergencyPhone}
                   onChange={(e) => setRegisterForm({ ...registerForm, emergencyPhone: e.target.value })}
                 />
@@ -1099,7 +1101,7 @@ export default function PatientsPage() {
             <h4 className="font-semibold text-slate-900 dark:text-white mb-3">ANC Information</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">LMP</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.lmp")}</label>
                 <Input
                   type="date"
                   value={registerForm.lmp}
@@ -1107,7 +1109,7 @@ export default function PatientsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">EDD</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("patientsPage.edd")}</label>
                 <Input
                   type="date"
                   value={registerForm.edd}
@@ -1115,37 +1117,37 @@ export default function PatientsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Gravida</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("appCopy.placeholder.gravida")}</label>
                 <Input
                   type="number"
                   min={0}
-                  placeholder="Gravida"
+                  placeholder={t("appCopy.placeholder.gravida")}
                   value={registerForm.gravida}
                   onChange={(e) => setRegisterForm({ ...registerForm, gravida: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Para</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("appCopy.placeholder.para")}</label>
                 <Input
                   type="number"
                   min={0}
-                  placeholder="Para"
+                  placeholder={t("appCopy.placeholder.para")}
                   value={registerForm.para}
                   onChange={(e) => setRegisterForm({ ...registerForm, para: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">HIV</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("appCopy.label.hivStatus")}</label>
                 <Input
-                  placeholder="e.g. negative, positive, unknown"
+                  placeholder={t("appCopy.placeholder.hivResult")}
                   value={registerForm.hiv}
                   onChange={(e) => setRegisterForm({ ...registerForm, hiv: e.target.value })}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Blood group / Rh</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("appCopy.label.bloodGroupRh")}</label>
                 <Input
-                  placeholder="e.g. O+"
+                  placeholder={t("appCopy.placeholder.bloodGroup")}
                   value={registerForm.bloodGroupRh}
                   onChange={(e) => setRegisterForm({ ...registerForm, bloodGroupRh: e.target.value })}
                 />
@@ -1167,14 +1169,14 @@ export default function PatientsPage() {
 
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700 sticky bottom-0 bg-white dark:bg-slate-900 pb-1">
             <Button variant="outline" onClick={() => setShowRegisterModal(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant="primary"
               onClick={handleRegisterClient}
               disabled={!registerForm.fullName.trim() || registering}
             >
-              {registering ? 'Registering...' : 'Register Client'}
+              {registering ? `${t("common.loading")}` : t("appCopy.patientsPage.registerClientAnc")}
             </Button>
           </div>
         </div>

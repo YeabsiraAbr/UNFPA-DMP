@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -62,6 +63,7 @@ import {
 } from 'lucide-react'
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const [isDark, setIsDark] = useState(true)
   const [profile, setProfile] = useState({ name: '', phone: '', role: 'doctor' })
   const [isSaving, setIsSaving] = useState(false)
@@ -177,12 +179,12 @@ export default function SettingsPage() {
 
   const handleChangePassword = async () => {
     setPwMessage('')
-    if (!currentPw || !newPw) { setPwMessage('Please fill all password fields'); return }
-    if (newPw !== confirmPw) { setPwMessage('Passwords do not match'); return }
-    if (newPw.length < 4) { setPwMessage('Password must be at least 4 characters'); return }
+    if (!currentPw || !newPw) { setPwMessage(t("settingsPage.passwordFillAllFields")); return }
+    if (newPw !== confirmPw) { setPwMessage(t("settingsPage.passwordsDoNotMatch")); return }
+    if (newPw.length < 4) { setPwMessage(t("settingsPage.passwordMinLengthError")); return }
     try {
       await authService.changePassword({ currentPassword: currentPw, newPassword: newPw })
-      setPwMessage('Password changed successfully!')
+      setPwMessage(t("settingsPage.passwordChangedSuccess"))
       setCurrentPw(''); setNewPw(''); setConfirmPw('')
     } catch (err) {
       setPwMessage(err instanceof Error ? err.message : 'Failed to change password')
@@ -293,16 +295,16 @@ export default function SettingsPage() {
 
   return (
     <DashboardLayout
-      title="Settings"
-      subtitle="System configuration and user management"
+      title={t("appCopy.shell.settingsTitle")}
+      subtitle={t("appCopy.shell.settingsSubtitle")}
     >
       <Tabs defaultValue="profile" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="users">User Management</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="system">System</TabsTrigger>
+          <TabsTrigger value="profile">{t("settingsPage.tabProfile")}</TabsTrigger>
+          <TabsTrigger value="users">{t("settingsPage.tabUserManagement")}</TabsTrigger>
+          <TabsTrigger value="notifications">{t("settingsPage.tabNotifications")}</TabsTrigger>
+          <TabsTrigger value="security">{t("settingsPage.tabSecurity")}</TabsTrigger>
+          <TabsTrigger value="system">{t("settingsPage.tabSystem")}</TabsTrigger>
         </TabsList>
 
         {/* Profile Tab */}
@@ -312,7 +314,7 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <UserIcon className="w-5 h-5 text-brand-500" />
-                  Profile Information
+                  {t("settingsPage.profileInformation")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -322,21 +324,21 @@ export default function SettingsPage() {
                     <h3 className="text-xl font-semibold">{profile.name || 'User'}</h3>
                     <p className="text-slate-500 capitalize">{profile.role}</p>
                     <Button variant="outline" size="sm" className="mt-2">
-                      Change Photo
+                      {t("settingsPage.changePhoto")}
                     </Button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Full Name" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
-                  <Input label="Phone Number" value={profile.phone} disabled />
+                  <Input label={t("settingsPage.fullName")} value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
+                  <Input label={t("settingsPage.phone")} value={profile.phone} disabled />
                   <Select
-                    label="Role"
+                    label={t("settingsPage.role")}
                     options={[
-                      { value: 'admin', label: 'Administrator' },
-                      { value: 'doctor', label: 'Doctor' },
-                      { value: 'midwife', label: 'Midwife' },
-                      { value: 'nurse', label: 'Nurse' },
+                      { value: 'admin', label: t("settingsPage.administrator") },
+                      { value: 'doctor', label: t("settingsPage.doctor") },
+                      { value: 'midwife', label: t("settingsPage.midwife") },
+                      { value: 'nurse', label: t("settingsPage.nurse") },
                     ]}
                     value={profile.role}
                     disabled
@@ -346,7 +348,7 @@ export default function SettingsPage() {
                 <div className="flex gap-3 mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
                   <Button variant="primary" onClick={handleSaveProfile} isLoading={isSaving}>
                     <Save className="w-4 h-4" />
-                    Save Changes
+                    {t("settingsPage.saveChanges")}
                   </Button>
                 </div>
               </CardContent>
@@ -354,14 +356,14 @@ export default function SettingsPage() {
 
             <Card variant="elevated">
               <CardHeader>
-                <CardTitle>Preferences</CardTitle>
+                <CardTitle>{t("settingsPage.preferences")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
                     <div className="flex items-center gap-3">
                       {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-                      <span>Dark Mode</span>
+                      <span>{t("settingsPage.darkMode")}</span>
                     </div>
                     <button
                       onClick={() => setIsDark(!isDark)}
@@ -378,7 +380,7 @@ export default function SettingsPage() {
                   <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
                     <div className="flex items-center gap-3 mb-2">
                       <Languages className="w-5 h-5" />
-                      <span>Language</span>
+                      <span>{t("settingsPage.language")}</span>
                     </div>
                     <Select
                       options={[
@@ -392,7 +394,7 @@ export default function SettingsPage() {
                   <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
                     <div className="flex items-center gap-3 mb-2">
                       <Globe className="w-5 h-5" />
-                      <span>Timezone</span>
+                      <span>{t("settingsPage.timezone")}</span>
                     </div>
                     <Select
                       options={[
@@ -414,11 +416,11 @@ export default function SettingsPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-brand-500" />
-                User Management
+                {t("settingsPage.tabUserManagement")}
               </CardTitle>
               <Button variant="primary" onClick={openAddUserModal}>
                 <Plus className="w-4 h-4" />
-                Add User
+                {t("settingsPage.addUser")}
               </Button>
             </CardHeader>
             <CardContent>
@@ -647,18 +649,18 @@ export default function SettingsPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="w-5 h-5 text-brand-500" />
-                Notification Settings
+                {t("settingsPage.notificationSettings")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {[
-                  { label: 'Critical risk alerts', description: 'Immediate notification for critical patient risks', enabled: true },
-                  { label: 'Teleconsult responses', description: 'When a specialist responds to your consultation', enabled: true },
-                  { label: 'Appointment reminders', description: 'Upcoming patient appointment notifications', enabled: true },
-                  { label: 'Sync status updates', description: 'Data synchronization success/failure alerts', enabled: false },
-                  { label: 'GBV case updates', description: 'Updates on gender-based violence cases', enabled: true },
-                  { label: 'System announcements', description: 'Platform updates and maintenance notices', enabled: false },
+                  { label: t("settingsPage.criticalRiskAlerts"), description: t("settingsPage.criticalRiskAlertsDesc"), enabled: true },
+                  { label: t("settingsPage.teleconsultResponses"), description: t("settingsPage.teleconsultResponsesDesc"), enabled: true },
+                  { label: t("settingsPage.appointmentReminders"), description: t("settingsPage.appointmentRemindersDesc"), enabled: true },
+                  { label: t("settingsPage.syncStatusUpdates"), description: t("settingsPage.syncStatusUpdatesDesc"), enabled: false },
+                  { label: t("settingsPage.gbvCaseUpdates"), description: t("settingsPage.gbvCaseUpdatesDesc"), enabled: true },
+                  { label: t("settingsPage.systemAnnouncements"), description: t("settingsPage.systemAnnouncementsDesc"), enabled: false },
                 ].map((notification, index) => (
                   <div
                     key={index}
@@ -691,7 +693,7 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Key className="w-5 h-5 text-brand-500" />
-                  Change Password
+                  {t("settingsPage.changePassword")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -701,12 +703,12 @@ export default function SettingsPage() {
                       {pwMessage}
                     </div>
                   )}
-                  <Input label="Current Password" type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
-                  <Input label="New Password" type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
-                  <Input label="Confirm New Password" type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
+                  <Input label={t("settingsPage.currentPassword")} type="password" value={currentPw} onChange={(e) => setCurrentPw(e.target.value)} />
+                  <Input label={t("settingsPage.newPassword")} type="password" value={newPw} onChange={(e) => setNewPw(e.target.value)} />
+                  <Input label={t("settingsPage.confirmNewPassword")} type="password" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} />
                   <Button variant="primary" onClick={handleChangePassword}>
                     <Lock className="w-4 h-4" />
-                    Update Password
+                    {t("settingsPage.updatePassword")}
                   </Button>
                 </div>
               </CardContent>
@@ -714,7 +716,7 @@ export default function SettingsPage() {
 
             <Card variant="elevated">
               <CardHeader>
-                <CardTitle>Active Sessions</CardTitle>
+                <CardTitle>{t("settingsPage.activeSessions")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -723,8 +725,8 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3">
                         <Monitor className="w-5 h-5 text-emerald-600" />
                         <div>
-                          <p className="font-medium">Current Session</p>
-                          <p className="text-xs text-slate-500">Chrome on macOS</p>
+                          <p className="font-medium">{t("settingsPage.currentSession")}</p>
+                          <p className="text-xs text-slate-500">{t("settingsPage.chromeOnMac")}</p>
                         </div>
                       </div>
                       <Badge variant="success" size="sm">Active</Badge>
@@ -735,12 +737,12 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-3">
                         <Smartphone className="w-5 h-5 text-slate-400" />
                         <div>
-                          <p className="font-medium">Mobile App</p>
-                          <p className="text-xs text-slate-500">Android - Last active 2h ago</p>
+                          <p className="font-medium">{t("settingsPage.mobileApp")}</p>
+                          <p className="text-xs text-slate-500">{t("settingsPage.androidLastActive")}</p>
                         </div>
                       </div>
                       <Button variant="ghost" size="sm" className="text-red-500">
-                        Revoke
+                        {t("settingsPage.revoke")}
                       </Button>
                     </div>
                   </div>
@@ -757,30 +759,30 @@ export default function SettingsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Database className="w-5 h-5 text-brand-500" />
-                  System Information
+                  {t("settingsPage.systemInformation")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span className="text-slate-500">Version</span>
+                    <span className="text-slate-500">{t("settingsPage.versionLabel")}</span>
                     <Badge variant="info">v1.0.0</Badge>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span className="text-slate-500">Risk Rules Version</span>
+                    <span className="text-slate-500">{t("settingsPage.riskRulesVersion")}</span>
                     <span className="font-medium">1.0.3</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span className="text-slate-500">Database</span>
-                    <span className="font-medium">SQLCipher (Encrypted)</span>
+                    <span className="text-slate-500">{t("settingsPage.database")}</span>
+                    <span className="font-medium">{t("settingsPage.sqlcipherEncrypted")}</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span className="text-slate-500">API Endpoint</span>
+                    <span className="text-slate-500">{t("settingsPage.apiEndpoint")}</span>
                     <span className="font-mono text-sm">api.unfpa-dmp.org</span>
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <span className="text-slate-500">Encryption</span>
-                    <span className="font-medium">AES-256 / TLS 1.3</span>
+                    <span className="text-slate-500">{t("settingsPage.encryption")}</span>
+                    <span className="font-medium">{t("settingsPage.aesEncryption")}</span>
                   </div>
                 </div>
               </CardContent>
@@ -788,7 +790,7 @@ export default function SettingsPage() {
 
             <Card variant="elevated">
               <CardHeader>
-                <CardTitle>Data Management</CardTitle>
+                <CardTitle>{t("settingsPage.dataManagement")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -802,7 +804,7 @@ export default function SettingsPage() {
                     }}
                   >
                     <RefreshCcw className="w-4 h-4" />
-                    Force Sync All Data
+                    {t("settingsPage.forceSyncAll")}
                   </Button>
                   <Button
                     variant="outline"
@@ -812,7 +814,7 @@ export default function SettingsPage() {
                     }}
                   >
                     <Database className="w-4 h-4" />
-                    Clear Local Cache
+                    {t("settingsPage.clearLocalCache")}
                   </Button>
                   <Button
                     variant="outline"
@@ -822,7 +824,7 @@ export default function SettingsPage() {
                     }}
                   >
                     <Settings className="w-4 h-4" />
-                    Reset Risk Rules
+                    {t("settingsPage.resetRiskRules")}
                   </Button>
                   <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                     <Button
@@ -848,10 +850,10 @@ export default function SettingsPage() {
                       }}
                     >
                       <Trash2 className="w-4 h-4" />
-                      Clear All Local Data
+                      {t("settingsPage.clearAllLocalData")}
                     </Button>
                     <p className="text-xs text-slate-500 text-center mt-2">
-                      This will remove all locally stored data. Server data is not affected.
+                      {t("settingsPage.clearDataWarning")}
                     </p>
                   </div>
                 </div>

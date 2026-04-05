@@ -6,6 +6,7 @@
  * Date/clinic filters and Export are UI-only until endpoints exist.
  */
 
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -43,6 +44,8 @@ export default function AnalyticsPage() {
   const [stats, setStats] = useState(DEFAULT_STATS)
   const [refreshing, setRefreshing] = useState(false)
 
+  const { t } = useTranslation()
+
   const loadDashboard = useCallback(async () => {
     setRefreshing(true)
     try {
@@ -72,8 +75,8 @@ export default function AnalyticsPage() {
 
   return (
     <DashboardLayout
-      title="Analytics"
-      subtitle="Program insights and performance metrics"
+      title={t("appCopy.shell.analyticsTitle")}
+      subtitle={t("appCopy.shell.analyticsSubtitle")}
     >
       {/* Controls */}
       <Card className="mb-6 p-4">
@@ -81,16 +84,16 @@ export default function AnalyticsPage() {
           <div className="flex gap-3">
             <Select
               options={[
-                { value: 'all', label: 'All Clinics' },
+                { value: 'all', label: t("analyticsPage.allClinics") },
               ]}
               value="all"
             />
             <Select
               options={[
-                { value: '30', label: 'Last 30 Days' },
-                { value: '90', label: 'Last 90 Days' },
-                { value: '180', label: 'Last 6 Months' },
-                { value: '365', label: 'Last Year' },
+                { value: '30', label: t("analyticsPage.last30Days") },
+                { value: '90', label: t("analyticsPage.last90Days") },
+                { value: '180', label: t("analyticsPage.last6Months") },
+                { value: '365', label: t("analyticsPage.lastYear") },
               ]}
               value="180"
             />
@@ -98,7 +101,7 @@ export default function AnalyticsPage() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => loadDashboard()} disabled={refreshing}>
               <RefreshCcw className={cn('w-4 h-4', refreshing && 'animate-spin')} />
-              Refresh
+              {t("common.refresh")}
             </Button>
             <Button
               variant="primary"
@@ -110,7 +113,7 @@ export default function AnalyticsPage() {
               }
             >
               <Download className="w-4 h-4" />
-              Export Report
+              {t("analyticsPage.exportReport")}
             </Button>
           </div>
         </div>
@@ -121,48 +124,48 @@ export default function AnalyticsPage() {
         <Card className="p-4 bg-gradient-to-br from-brand-500 to-brand-600 text-white">
           <Users className="w-6 h-6 opacity-80" />
           <p className="text-3xl font-bold mt-2">{stats.totalPatients.toLocaleString()}</p>
-          <p className="text-sm opacity-80">Total Patients</p>
+          <p className="text-sm opacity-80">{t("analyticsPage.totalPatients")}</p>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-purple-500 to-purple-600 text-white">
           <Baby className="w-6 h-6 opacity-80" />
           <p className="text-3xl font-bold mt-2">{stats.activePregnancies}</p>
-          <p className="text-sm opacity-80">Active Pregnancies</p>
+          <p className="text-sm opacity-80">{t("analyticsPage.activePregnancies")}</p>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-emerald-500 to-emerald-600 text-white">
           <Calendar className="w-6 h-6 opacity-80" />
           <p className="text-3xl font-bold mt-2">{stats.visitsThisMonth}</p>
-          <p className="text-sm opacity-80">Visits (Month)</p>
+          <p className="text-sm opacity-80">{t("analyticsPage.visitsMonth")}</p>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-red-500 to-red-600 text-white">
           <AlertTriangle className="w-6 h-6 opacity-80" />
           <p className="text-3xl font-bold mt-2">{stats.highRiskPatients}</p>
-          <p className="text-sm opacity-80">High Risk</p>
+          <p className="text-sm opacity-80">{t("analyticsPage.highRisk")}</p>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white">
           <MessageSquare className="w-6 h-6 opacity-80" />
           <p className="text-3xl font-bold mt-2">{stats.teleconsultsThisMonth}</p>
-          <p className="text-sm opacity-80">Teleconsults</p>
+          <p className="text-sm opacity-80">{t("analyticsPage.teleconsults")}</p>
         </Card>
         <Card className="p-4 bg-gradient-to-br from-amber-500 to-amber-600 text-white">
           <Shield className="w-6 h-6 opacity-80" />
           <p className="text-3xl font-bold mt-2">{stats.gbvReportsThisMonth}</p>
-          <p className="text-sm opacity-80">GBV Reports</p>
+          <p className="text-sm opacity-80">{t("analyticsPage.gbvReports")}</p>
         </Card>
       </div>
 
       {/* Charts */}
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="patients">Patient Analytics</TabsTrigger>
-          <TabsTrigger value="clinical">Clinical Metrics</TabsTrigger>
-          <TabsTrigger value="operations">Operations</TabsTrigger>
+          <TabsTrigger value="overview">{t("analyticsPage.tabOverview")}</TabsTrigger>
+          <TabsTrigger value="patients">{t("analyticsPage.tabPatientAnalytics")}</TabsTrigger>
+          <TabsTrigger value="clinical">{t("analyticsPage.tabClinicalMetrics")}</TabsTrigger>
+          <TabsTrigger value="operations">{t("analyticsPage.tabOperations")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
           <Card variant="elevated">
             <CardContent className="py-12 text-center text-slate-500">
-              <p>No chart data available from the API yet.</p>
+              <p>{t("analyticsPage.placeholderNoOverview")}</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -170,7 +173,7 @@ export default function AnalyticsPage() {
         <TabsContent value="patients">
           <Card variant="elevated">
             <CardContent className="py-12 text-center text-slate-500">
-              <p>Patient demographic analytics are not available from the API yet.</p>
+              <p>{t("analyticsPage.placeholderNoPatientAnalytics")}</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -178,7 +181,7 @@ export default function AnalyticsPage() {
         <TabsContent value="clinical">
           <Card variant="elevated">
             <CardContent className="py-12 text-center text-slate-500">
-              <p>Clinical metrics analytics are not available from the API yet.</p>
+              <p>{t("analyticsPage.placeholderNoClinicalMetrics")}</p>
             </CardContent>
           </Card>
         </TabsContent>
@@ -186,7 +189,7 @@ export default function AnalyticsPage() {
         <TabsContent value="operations">
           <Card variant="elevated">
             <CardContent className="py-12 text-center text-slate-500">
-              <p>Operations analytics are not available from the API yet.</p>
+              <p>{t("analyticsPage.placeholderNoOperations")}</p>
             </CardContent>
           </Card>
         </TabsContent>

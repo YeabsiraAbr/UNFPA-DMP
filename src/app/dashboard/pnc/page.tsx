@@ -13,8 +13,10 @@ import { downloadCsv } from '@/lib/download'
 import type { PNCVisit, Patient } from '@/services/types'
 import { Plus, Search, Eye, Pencil, Trash2, HeartPulse, RefreshCcw, Download } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { useTranslation } from '@/lib/i18n'
 
 export default function PNCPage() {
+  const { t } = useTranslation()
   const [visits, setVisits] = useState<PNCVisit[]>([])
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
@@ -69,7 +71,7 @@ export default function PNCPage() {
     setLoading(false)
   }
 
-  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? 'Unknown'
+  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? t("common.unknown")
 
   const resetForm = () => setForm({
     patientId: '',
@@ -149,15 +151,15 @@ export default function PNCPage() {
   )
 
   return (
-    <DashboardLayout title="PNC Visits" subtitle="Postnatal Care visit management">
+    <DashboardLayout title={t("appCopy.shell.pncTitle")} subtitle={t("appCopy.shell.pncSubtitle")}>
       <div className="flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center justify-between">
         <div className="w-full sm:w-80">
-          <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input placeholder={t("appCopy.search.patientName")} icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => { clearCache('patients-list'); loadData() }} disabled={loading}>
             <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t("common.refresh")}
           </Button>
           <Button
             variant="outline"
@@ -170,18 +172,18 @@ export default function PNCPage() {
               downloadCsv(`pnc-visits-${new Date().toISOString().slice(0, 10)}.csv`, rows)
             }}
           >
-            <Download className="w-4 h-4" /> Export
+            <Download className="w-4 h-4" /> {t("common.export")}
           </Button>
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4" /> New PNC Visit
+            <Plus className="w-4 h-4" /> {t("appCopy.modal.newPncVisit")}
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <LoadingState message="Loading PNC visits..." />
+        <LoadingState message={t("appCopy.loading.pnc")} />
       ) : filtered.length === 0 ? (
-        <EmptyState message="No PNC visits found" />
+        <EmptyState message={t("appCopy.empty.pnc")} />
       ) : (
         <div className="grid gap-4">
           {filtered.map(visit => (
@@ -221,76 +223,76 @@ export default function PNCPage() {
       )}
 
       {/* Create Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New PNC Visit" size="lg">
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title={t("appCopy.modal.newPncVisit")} size="lg">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("common.patient")}</label>
             <select className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm" value={form.patientId} onChange={e => setForm({ ...form, patientId: e.target.value })}>
-              <option value="">Select a patient...</option>
+              <option value="">{t("common.patient")}...</option>
               {patients.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Visit Date" type="date" value={form.visitDate} onChange={e => setForm({ ...form, visitDate: e.target.value })} />
-            <Input label="Blood Pressure" value={form.bloodPressure} onChange={e => setForm({ ...form, bloodPressure: e.target.value })} placeholder="e.g. 120/80" />
+            <Input label={t("appCopy.label.bloodPressure")} value={form.bloodPressure} onChange={e => setForm({ ...form, bloodPressure: e.target.value })} placeholder={t("appCopy.placeholder.bloodPressure")} />
           </div>
-          <Input label="Temperature (°C)" type="number" value={form.temperature} onChange={e => setForm({ ...form, temperature: e.target.value })} placeholder="e.g. 36.5" />
+          <Input label={t("appCopy.label.temperatureCelsius")} type="number" value={form.temperature} onChange={e => setForm({ ...form, temperature: e.target.value })} placeholder={t("appCopy.placeholder.temperatureNum")} />
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Baby Breathing" value={form.babyBreathing} onChange={e => setForm({ ...form, babyBreathing: e.target.value })} placeholder="e.g. Normal" />
-            <Input label="Baby Breast Feeding" value={form.babyBreastFeeding} onChange={e => setForm({ ...form, babyBreastFeeding: e.target.value })} placeholder="e.g. Good" />
+            <Input label={t("appCopy.label.babyBreathing")} value={form.babyBreathing} onChange={e => setForm({ ...form, babyBreathing: e.target.value })} placeholder={t("appCopy.placeholder.babyBreathing")} />
+            <Input label={t("appCopy.label.babyBreastFeeding")} value={form.babyBreastFeeding} onChange={e => setForm({ ...form, babyBreastFeeding: e.target.value })} placeholder={t("appCopy.placeholder.babyBreastFeeding")} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="HIV Tested" value={form.hivTested} onChange={e => setForm({ ...form, hivTested: e.target.value })} placeholder="e.g. Yes / No" />
-            <Input label="HIV Test Result" value={form.hivTestResult} onChange={e => setForm({ ...form, hivTestResult: e.target.value })} placeholder="e.g. Negative" />
+            <Input label={t("appCopy.label.hivTested")} value={form.hivTested} onChange={e => setForm({ ...form, hivTested: e.target.value })} placeholder={t("appCopy.placeholder.hivTested")} />
+            <Input label={t("appCopy.label.hivTestResult")} value={form.hivTestResult} onChange={e => setForm({ ...form, hivTestResult: e.target.value })} placeholder={t("appCopy.placeholder.hivTestResult")} />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Remark</label>
             <textarea className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" value={form.remark} onChange={e => setForm({ ...form, remark: e.target.value })} placeholder="Additional notes..." />
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleCreate} isLoading={saving}>Create Visit</Button>
-            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleCreate} isLoading={saving}>{t("common.save")}</Button>
+            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
 
       {/* Edit Modal */}
-      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit PNC Visit" size="lg">
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={t("appCopy.modal.editPncVisit")} size="lg">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Blood Pressure" value={editForm.bloodPressure} onChange={e => setEditForm({ ...editForm, bloodPressure: e.target.value })} placeholder="e.g. 120/80" />
-            <Input label="Temperature (°C)" type="number" value={editForm.temperature} onChange={e => setEditForm({ ...editForm, temperature: e.target.value })} placeholder="e.g. 36.5" />
+            <Input label={t("appCopy.label.bloodPressure")} value={editForm.bloodPressure} onChange={e => setEditForm({ ...editForm, bloodPressure: e.target.value })} placeholder={t("appCopy.placeholder.bloodPressure")} />
+            <Input label={t("appCopy.label.temperatureCelsius")} type="number" value={editForm.temperature} onChange={e => setEditForm({ ...editForm, temperature: e.target.value })} placeholder={t("appCopy.placeholder.temperatureNum")} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Baby Breathing" value={editForm.babyBreathing} onChange={e => setEditForm({ ...editForm, babyBreathing: e.target.value })} placeholder="e.g. Normal" />
-            <Input label="Baby Breast Feeding" value={editForm.babyBreastFeeding} onChange={e => setEditForm({ ...editForm, babyBreastFeeding: e.target.value })} placeholder="e.g. Good" />
+            <Input label={t("appCopy.label.babyBreathing")} value={editForm.babyBreathing} onChange={e => setEditForm({ ...editForm, babyBreathing: e.target.value })} placeholder={t("appCopy.placeholder.babyBreathing")} />
+            <Input label={t("appCopy.label.babyBreastFeeding")} value={editForm.babyBreastFeeding} onChange={e => setEditForm({ ...editForm, babyBreastFeeding: e.target.value })} placeholder={t("appCopy.placeholder.babyBreastFeeding")} />
           </div>
-          <Input label="HIV Tested" value={editForm.hivTested} onChange={e => setEditForm({ ...editForm, hivTested: e.target.value })} placeholder="e.g. Yes / No" />
+          <Input label={t("appCopy.label.hivTested")} value={editForm.hivTested} onChange={e => setEditForm({ ...editForm, hivTested: e.target.value })} placeholder={t("appCopy.placeholder.hivTested")} />
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Remark</label>
             <textarea className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm min-h-[80px] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" value={editForm.remark} onChange={e => setEditForm({ ...editForm, remark: e.target.value })} placeholder="Additional notes..." />
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>Save Changes</Button>
-            <Button variant="ghost" onClick={() => setShowEditModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>{t("common.save")}</Button>
+            <Button variant="ghost" onClick={() => setShowEditModal(false)}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
 
       {/* Detail Modal */}
-      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="PNC Visit Details" size="lg">
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title={t("appCopy.modal.pncVisitDetails")} size="lg">
         {selectedVisit && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs text-slate-500">Patient</p><p className="font-medium">{getPatientName(selectedVisit.patientId)}</p></div>
-              <div><p className="text-xs text-slate-500">Visit Date</p><p className="font-medium">{(selectedVisit as Record<string, unknown>).visitDate ? formatDate((selectedVisit as Record<string, unknown>).visitDate as string) : 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Blood Pressure</p><p className="font-medium">{selectedVisit.bloodPressure ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Temperature</p><p className="font-medium">{selectedVisit.temperature != null ? `${selectedVisit.temperature}°C` : 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Baby Breathing</p><p className="font-medium">{selectedVisit.babyBreathing ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Baby Breast Feeding</p><p className="font-medium">{selectedVisit.babyBreastFeeding ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">HIV Tested</p><p className="font-medium">{selectedVisit.hivTested ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">HIV Test Result</p><p className="font-medium">{(selectedVisit as Record<string, unknown>).hivTestResult as string ?? 'N/A'}</p></div>
-              <div className="col-span-2"><p className="text-xs text-slate-500">Remark</p><p className="font-medium">{(selectedVisit as Record<string, unknown>).remark as string ?? 'N/A'}</p></div>
+              <div><p className="text-xs text-slate-500">{t("common.patient")}</p><p className="font-medium">{getPatientName(selectedVisit.patientId)}</p></div>
+              <div><p className="text-xs text-slate-500">Visit Date</p><p className="font-medium">{(selectedVisit as Record<string, unknown>).visitDate ? formatDate((selectedVisit as Record<string, unknown>).visitDate as string) : t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.bloodPressure")}</p><p className="font-medium">{selectedVisit.bloodPressure ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.temperature")}</p><p className="font-medium">{selectedVisit.temperature != null ? `${selectedVisit.temperature}°C` : t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.babyBreathing")}</p><p className="font-medium">{selectedVisit.babyBreathing ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.babyBreastFeeding")}</p><p className="font-medium">{selectedVisit.babyBreastFeeding ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.hivTested")}</p><p className="font-medium">{selectedVisit.hivTested ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.hivTestResult")}</p><p className="font-medium">{(selectedVisit as Record<string, unknown>).hivTestResult as string ?? t("common.na")}</p></div>
+              <div className="col-span-2"><p className="text-xs text-slate-500">Remark</p><p className="font-medium">{(selectedVisit as Record<string, unknown>).remark as string ?? t("common.na")}</p></div>
             </div>
             <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
               <Button
@@ -300,7 +302,7 @@ export default function PNCPage() {
                   setShowDetailModal(false)
                 }}
               >
-                <Pencil className="w-4 h-4" /> Edit
+                <Pencil className="w-4 h-4" /> {t("common.edit")}
               </Button>
             </div>
           </div>

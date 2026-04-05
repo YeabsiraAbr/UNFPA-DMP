@@ -13,8 +13,10 @@ import { downloadCsv } from '@/lib/download'
 import type { Delivery, Patient } from '@/services/types'
 import { Plus, Search, Eye, Pencil, Trash2, Stethoscope, RefreshCcw, Download } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { useTranslation } from '@/lib/i18n'
 
 export default function DeliveryPage() {
+  const { t } = useTranslation()
   const [records, setRecords] = useState<Delivery[]>([])
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
@@ -91,7 +93,7 @@ export default function DeliveryPage() {
     setLoading(false)
   }
 
-  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? 'Unknown'
+  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? t("common.unknown")
 
   const resetForm = () => setForm({
     patientId: '',
@@ -258,15 +260,15 @@ export default function DeliveryPage() {
   )
 
   return (
-    <DashboardLayout title="Delivery Records" subtitle="Delivery and newborn record management">
+    <DashboardLayout title={t("appCopy.shell.deliveryTitle")} subtitle={t("appCopy.shell.deliverySubtitle")}>
       <div className="flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center justify-between">
         <div className="w-full sm:w-80">
-          <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input placeholder={t("appCopy.search.patientName")} icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => { clearCache('patients-list'); loadData() }} disabled={loading}>
             <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t("common.refresh")}
           </Button>
           <Button
             variant="outline"
@@ -279,18 +281,18 @@ export default function DeliveryPage() {
               downloadCsv(`delivery-records-${new Date().toISOString().slice(0, 10)}.csv`, rows)
             }}
           >
-            <Download className="w-4 h-4" /> Export
+            <Download className="w-4 h-4" /> {t("common.export")}
           </Button>
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4" /> New Delivery Record
+            <Plus className="w-4 h-4" /> {t("appCopy.modal.newDeliveryRecord")}
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <LoadingState message="Loading delivery records..." />
+        <LoadingState message={t("appCopy.loading.delivery")} />
       ) : filtered.length === 0 ? (
-        <EmptyState message="No delivery records found" />
+        <EmptyState message={t("appCopy.empty.delivery")} />
       ) : (
         <div className="grid gap-4">
           {filtered.map(record => (
@@ -338,12 +340,12 @@ export default function DeliveryPage() {
       )}
 
       {/* Create Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New Delivery Record" size="lg">
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title={t("appCopy.modal.newDeliveryRecord")} size="lg">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("common.patient")}</label>
             <select className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm" value={form.patientId} onChange={e => setForm({ ...form, patientId: e.target.value })}>
-              <option value="">Select a patient...</option>
+              <option value="">{t("common.patient")}...</option>
               {patients.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
             </select>
           </div>
@@ -356,7 +358,7 @@ export default function DeliveryPage() {
             <span className="text-sm text-slate-700 dark:text-slate-300">Referral</span>
           </label>
           {form.referral && (
-            <Input label="Referral Info" value={form.referralInfo} onChange={e => setForm({ ...form, referralInfo: e.target.value })} placeholder="Referral details..." />
+            <Input label={t("appCopy.label.referralInfo")} value={form.referralInfo} onChange={e => setForm({ ...form, referralInfo: e.target.value })} placeholder={t("appCopy.placeholder.referralDetails")} />
           )}
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -442,8 +444,8 @@ export default function DeliveryPage() {
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleCreate} isLoading={saving}>Create Record</Button>
-            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleCreate} isLoading={saving}>{t("common.save")}</Button>
+            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
@@ -455,12 +457,12 @@ export default function DeliveryPage() {
           setShowEditModal(false)
           setEditId(null)
         }}
-        title="Edit Delivery Record"
+        title={t("appCopy.modal.editDeliveryRecord")}
         size="lg"
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("common.patient")}</label>
             <select
               className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-3 py-2 text-sm cursor-not-allowed"
               value={editForm.patientId}
@@ -478,7 +480,7 @@ export default function DeliveryPage() {
             <span className="text-sm text-slate-700 dark:text-slate-300">Referral</span>
           </label>
           {editForm.referral && (
-            <Input label="Referral Info" value={editForm.referralInfo} onChange={e => setEditForm({ ...editForm, referralInfo: e.target.value })} placeholder="Referral details..." />
+            <Input label={t("appCopy.label.referralInfo")} value={editForm.referralInfo} onChange={e => setEditForm({ ...editForm, referralInfo: e.target.value })} placeholder={t("appCopy.placeholder.referralDetails")} />
           )}
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -512,46 +514,46 @@ export default function DeliveryPage() {
             </div>
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>Save Changes</Button>
-            <Button variant="ghost" onClick={() => { setShowEditModal(false); setEditId(null) }}>Cancel</Button>
+            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>{t("common.save")}</Button>
+            <Button variant="ghost" onClick={() => { setShowEditModal(false); setEditId(null) }}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
 
       {/* Detail Modal */}
-      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Delivery Record Details" size="lg">
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title={t("appCopy.modal.deliveryRecordDetails")} size="lg">
         {selectedRecord && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs text-slate-500">Patient</p><p className="font-medium">{getPatientName(selectedRecord.patientId)}</p></div>
-              <div><p className="text-xs text-slate-500">Delivery Date</p><p className="font-medium">{selectedRecord.deliveryDate ? formatDate(selectedRecord.deliveryDate) : 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">AMTSL</p><p className="font-medium">{selectedRecord.amtsl ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Placenta</p><p className="font-medium">{selectedRecord.placenta ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Referral</p><p className="font-medium">{selectedRecord.referral ? 'Yes' : 'No'}</p></div>
-              <div><p className="text-xs text-slate-500">Laceration</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).laceration as string ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Obstetric Cx Managed</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).obstetricCxManaged ? 'Yes' : 'No'}</p></div>
-              <div><p className="text-xs text-slate-500">APH Managed</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).aphManaged ? 'Yes' : 'No'}</p></div>
-              <div><p className="text-xs text-slate-500">PPH Managed</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).pphManaged ? 'Yes' : 'No'}</p></div>
-              <div><p className="text-xs text-slate-500">Eclampsia Managed</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).eclampsiaManaged ? 'Yes' : 'No'}</p></div>
+              <div><p className="text-xs text-slate-500">{t("common.patient")}</p><p className="font-medium">{getPatientName(selectedRecord.patientId)}</p></div>
+              <div><p className="text-xs text-slate-500">Delivery Date</p><p className="font-medium">{selectedRecord.deliveryDate ? formatDate(selectedRecord.deliveryDate) : t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">AMTSL</p><p className="font-medium">{selectedRecord.amtsl ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Placenta</p><p className="font-medium">{selectedRecord.placenta ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Referral</p><p className="font-medium">{selectedRecord.referral ? t("common.yes") : t("common.no")}</p></div>
+              <div><p className="text-xs text-slate-500">Laceration</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).laceration as string ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Obstetric Cx Managed</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).obstetricCxManaged ? t("common.yes") : t("common.no")}</p></div>
+              <div><p className="text-xs text-slate-500">APH Managed</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).aphManaged ? t("common.yes") : t("common.no")}</p></div>
+              <div><p className="text-xs text-slate-500">PPH Managed</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).pphManaged ? t("common.yes") : t("common.no")}</p></div>
+              <div><p className="text-xs text-slate-500">Eclampsia Managed</p><p className="font-medium">{(selectedRecord as Record<string, unknown>).eclampsiaManaged ? t("common.yes") : t("common.no")}</p></div>
             </div>
             {selectedRecord.newborns && selectedRecord.newborns.length > 0 && (
               <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                 <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-3">Newborns</h4>
                 {selectedRecord.newborns.map((nb, idx) => (
                   <div key={nb.id ?? idx} className="grid grid-cols-3 gap-4 mb-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-                    <div><p className="text-xs text-slate-500">Sex</p><p className="font-medium">{nb.sex ?? 'N/A'}</p></div>
-                    <div><p className="text-xs text-slate-500">Term</p><p className="font-medium">{nb.termStatus ?? 'N/A'}</p></div>
-                    <div><p className="text-xs text-slate-500">Alive</p><p className="font-medium">{nb.alive ? 'Yes' : 'No'}</p></div>
-                    <div><p className="text-xs text-slate-500">Apgar</p><p className="font-medium">{nb.apgarScore ?? 'N/A'}</p></div>
-                    <div><p className="text-xs text-slate-500">Weight (gm)</p><p className="font-medium">{nb.birthWeightGm ?? 'N/A'}</p></div>
-                    <div><p className="text-xs text-slate-500">Length (cm)</p><p className="font-medium">{nb.lengthCm ?? 'N/A'}</p></div>
+                    <div><p className="text-xs text-slate-500">Sex</p><p className="font-medium">{nb.sex ?? t("common.na")}</p></div>
+                    <div><p className="text-xs text-slate-500">Term</p><p className="font-medium">{nb.termStatus ?? t("common.na")}</p></div>
+                    <div><p className="text-xs text-slate-500">Alive</p><p className="font-medium">{nb.alive ? t("common.yes") : t("common.no")}</p></div>
+                    <div><p className="text-xs text-slate-500">Apgar</p><p className="font-medium">{nb.apgarScore ?? t("common.na")}</p></div>
+                    <div><p className="text-xs text-slate-500">Weight (gm)</p><p className="font-medium">{nb.birthWeightGm ?? t("common.na")}</p></div>
+                    <div><p className="text-xs text-slate-500">Length (cm)</p><p className="font-medium">{nb.lengthCm ?? t("common.na")}</p></div>
                   </div>
                 ))}
               </div>
             )}
             <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
               <Button variant="primary" onClick={() => openEditFromRecord(selectedRecord)}>
-                <Pencil className="w-4 h-4" /> Edit
+                <Pencil className="w-4 h-4" /> {t("common.edit")}
               </Button>
             </div>
           </div>

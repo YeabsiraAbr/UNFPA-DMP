@@ -13,8 +13,10 @@ import { downloadCsv } from '@/lib/download'
 import type { ANCRecord, Patient } from '@/services/types'
 import { Plus, Search, Eye, Pencil, Trash2, Baby, RefreshCcw, Download } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { useTranslation } from '@/lib/i18n'
 
 export default function ANCPage() {
+  const { t } = useTranslation()
   const [records, setRecords] = useState<ANCRecord[]>([])
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,7 +73,7 @@ export default function ANCPage() {
     setLoading(false)
   }
 
-  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? 'Unknown'
+  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? t("common.unknown")
 
   const handleCreate = async () => {
     if (!form.patientId) return
@@ -146,15 +148,15 @@ export default function ANCPage() {
   )
 
   return (
-    <DashboardLayout title="ANC Records" subtitle="Antenatal Care record management">
+    <DashboardLayout title={t("appCopy.shell.ancTitle")} subtitle={t("appCopy.shell.ancSubtitle")}>
       <div className="flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center justify-between">
         <div className="w-full sm:w-80">
-          <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input placeholder={t("appCopy.search.patientName")} icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => { clearCache('patients-list'); loadData() }} disabled={loading}>
             <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t("common.refresh")}
           </Button>
           <Button
             variant="outline"
@@ -167,18 +169,18 @@ export default function ANCPage() {
               downloadCsv(`anc-records-${new Date().toISOString().slice(0, 10)}.csv`, rows)
             }}
           >
-            <Download className="w-4 h-4" /> Export
+            <Download className="w-4 h-4" /> {t("common.export")}
           </Button>
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4" /> New ANC Record
+            <Plus className="w-4 h-4" /> {t("appCopy.modal.newAncRecord")}
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <LoadingState message="Loading ANC records..." />
+        <LoadingState message={t("appCopy.loading.anc")} />
       ) : filtered.length === 0 ? (
-        <EmptyState message="No ANC records found" />
+        <EmptyState message={t("appCopy.empty.anc")} />
       ) : (
         <div className="grid gap-4">
           {filtered.map(record => (
@@ -226,34 +228,34 @@ export default function ANCPage() {
       )}
 
       {/* Create Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New ANC Record" size="lg">
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title={t("appCopy.modal.newAncRecord")} size="lg">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("common.patient")}</label>
             <select className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm" value={form.patientId} onChange={e => setForm({ ...form, patientId: e.target.value })}>
-              <option value="">Select a patient...</option>
+              <option value="">{t("common.patient")}...</option>
               {patients.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="LMP (Last Menstrual Period)" type="date" value={form.lmp} onChange={e => setForm({ ...form, lmp: e.target.value })} />
-            <Input label="EDD (Expected Due Date)" type="date" value={form.edd} onChange={e => setForm({ ...form, edd: e.target.value })} />
+            <Input label="LMP" type="date" value={form.lmp} onChange={e => setForm({ ...form, lmp: e.target.value })} />
+            <Input label="EDD" type="date" value={form.edd} onChange={e => setForm({ ...form, edd: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Gravida" type="number" value={form.gravida} onChange={e => setForm({ ...form, gravida: e.target.value })} />
-            <Input label="Para" type="number" value={form.para} onChange={e => setForm({ ...form, para: e.target.value })} />
+            <Input label={t("appCopy.placeholder.gravida")} type="number" value={form.gravida} onChange={e => setForm({ ...form, gravida: e.target.value })} />
+            <Input label={t("appCopy.placeholder.para")} type="number" value={form.para} onChange={e => setForm({ ...form, para: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="HIV Status" value={form.hiv} onChange={e => setForm({ ...form, hiv: e.target.value })} placeholder="e.g. Negative" />
-            <Input label="Blood Group & Rh" value={form.bloodGroupRh} onChange={e => setForm({ ...form, bloodGroupRh: e.target.value })} placeholder="e.g. O+" />
+            <Input label={t("appCopy.label.hivStatus")} value={form.hiv} onChange={e => setForm({ ...form, hiv: e.target.value })} placeholder={t("appCopy.placeholder.hivStatus")} />
+            <Input label={t("appCopy.label.bloodGroupRh")} value={form.bloodGroupRh} onChange={e => setForm({ ...form, bloodGroupRh: e.target.value })} placeholder={t("appCopy.placeholder.bloodGroupRh")} />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600" checked={form.diabetesMellitus} onChange={e => setForm({ ...form, diabetesMellitus: e.target.checked })} />
             <span className="text-sm text-slate-700 dark:text-slate-300">Diabetes Mellitus</span>
           </label>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleCreate} isLoading={saving}>Create Record</Button>
-            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleCreate} isLoading={saving}>{t("common.save")}</Button>
+            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
@@ -265,12 +267,12 @@ export default function ANCPage() {
           setShowEditModal(false)
           setEditId(null)
         }}
-        title="Edit ANC Record"
+        title={t("appCopy.modal.editAncRecord")}
         size="lg"
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("common.patient")}</label>
             <select
               className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900/50 px-3 py-2 text-sm cursor-not-allowed"
               value={editForm.patientId}
@@ -280,44 +282,44 @@ export default function ANCPage() {
             </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="LMP (Last Menstrual Period)" type="date" value={editForm.lmp} onChange={e => setEditForm({ ...editForm, lmp: e.target.value })} />
-            <Input label="EDD (Expected Due Date)" type="date" value={editForm.edd} onChange={e => setEditForm({ ...editForm, edd: e.target.value })} />
+            <Input label="LMP" type="date" value={editForm.lmp} onChange={e => setEditForm({ ...editForm, lmp: e.target.value })} />
+            <Input label="EDD" type="date" value={editForm.edd} onChange={e => setEditForm({ ...editForm, edd: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Gravida" type="number" value={editForm.gravida} onChange={e => setEditForm({ ...editForm, gravida: e.target.value })} />
-            <Input label="Para" type="number" value={editForm.para} onChange={e => setEditForm({ ...editForm, para: e.target.value })} />
+            <Input label={t("appCopy.placeholder.gravida")} type="number" value={editForm.gravida} onChange={e => setEditForm({ ...editForm, gravida: e.target.value })} />
+            <Input label={t("appCopy.placeholder.para")} type="number" value={editForm.para} onChange={e => setEditForm({ ...editForm, para: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="HIV Status" value={editForm.hiv} onChange={e => setEditForm({ ...editForm, hiv: e.target.value })} placeholder="e.g. Negative" />
-            <Input label="Blood Group & Rh" value={editForm.bloodGroupRh} onChange={e => setEditForm({ ...editForm, bloodGroupRh: e.target.value })} placeholder="e.g. O+" />
+            <Input label={t("appCopy.label.hivStatus")} value={editForm.hiv} onChange={e => setEditForm({ ...editForm, hiv: e.target.value })} placeholder={t("appCopy.placeholder.hivStatus")} />
+            <Input label={t("appCopy.label.bloodGroupRh")} value={editForm.bloodGroupRh} onChange={e => setEditForm({ ...editForm, bloodGroupRh: e.target.value })} placeholder={t("appCopy.placeholder.bloodGroupRh")} />
           </div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-600" checked={editForm.diabetesMellitus} onChange={e => setEditForm({ ...editForm, diabetesMellitus: e.target.checked })} />
             <span className="text-sm text-slate-700 dark:text-slate-300">Diabetes Mellitus</span>
           </label>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>Save Changes</Button>
-            <Button variant="ghost" onClick={() => { setShowEditModal(false); setEditId(null) }}>Cancel</Button>
+            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>{t("common.save")}</Button>
+            <Button variant="ghost" onClick={() => { setShowEditModal(false); setEditId(null) }}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
 
       {/* Detail Modal */}
-      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="ANC Record Details" size="lg">
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title={t("appCopy.modal.ancRecordDetails")} size="lg">
         {selectedRecord && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs text-slate-500">Patient</p><p className="font-medium">{getPatientName(selectedRecord.patientId)}</p></div>
-              <div><p className="text-xs text-slate-500">LMP</p><p className="font-medium">{selectedRecord.lmp ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">EDD</p><p className="font-medium">{selectedRecord.edd ?? 'N/A'}</p></div>
+              <div><p className="text-xs text-slate-500">{t("common.patient")}</p><p className="font-medium">{getPatientName(selectedRecord.patientId)}</p></div>
+              <div><p className="text-xs text-slate-500">LMP</p><p className="font-medium">{selectedRecord.lmp ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">EDD</p><p className="font-medium">{selectedRecord.edd ?? t("common.na")}</p></div>
               <div><p className="text-xs text-slate-500">G/P</p><p className="font-medium">G{selectedRecord.gravida ?? '-'}P{selectedRecord.para ?? '-'}</p></div>
-              <div><p className="text-xs text-slate-500">HIV</p><p className="font-medium">{selectedRecord.hiv ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Blood Group</p><p className="font-medium">{selectedRecord.bloodGroupRh ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Diabetes</p><p className="font-medium">{selectedRecord.diabetesMellitus ? 'Yes' : 'No'}</p></div>
+              <div><p className="text-xs text-slate-500">HIV</p><p className="font-medium">{selectedRecord.hiv ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.bloodGroupRh")}</p><p className="font-medium">{selectedRecord.bloodGroupRh ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Diabetes</p><p className="font-medium">{selectedRecord.diabetesMellitus ? t("common.yes") : t("common.no")}</p></div>
             </div>
             <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
               <Button variant="primary" onClick={() => openEditFromRecord(selectedRecord)}>
-                <Pencil className="w-4 h-4" /> Edit
+                <Pencil className="w-4 h-4" /> {t("common.edit")}
               </Button>
             </div>
           </div>

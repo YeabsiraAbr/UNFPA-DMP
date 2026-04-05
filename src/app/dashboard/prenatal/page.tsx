@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -108,6 +109,7 @@ function visitToPrenatal(v: ApiVisit): PrenatalVisit {
 }
 
 export default function PrenatalCarePage() {
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedVisit, setSelectedVisit] = useState<PrenatalVisit | null>(null)
   const [showVisitModal, setShowVisitModal] = useState(false)
@@ -236,18 +238,18 @@ export default function PrenatalCarePage() {
   if (loading) {
     return (
       <DashboardLayout
-        title="Prenatal Care"
-        subtitle="Track prenatal visits, vitals, and patient progress"
+        title={t("appCopy.shell.prenatalTitle")}
+        subtitle={t("appCopy.shell.prenatalSubtitle")}
       >
-        <LoadingState message="Loading prenatal data…" />
+        <LoadingState message={t("appCopy.loading.prenatal")} />
       </DashboardLayout>
     )
   }
 
   return (
     <DashboardLayout
-      title="Prenatal Care"
-      subtitle="Track prenatal visits, vitals, and patient progress"
+      title={t("appCopy.shell.prenatalTitle")}
+      subtitle={t("appCopy.shell.prenatalSubtitle")}
     >
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -256,7 +258,7 @@ export default function PrenatalCarePage() {
             <Calendar className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">{visits.length}</p>
-              <p className="text-sm opacity-80">Total Visits</p>
+              <p className="text-sm opacity-80">{t("prenatalPage.totalVisits")}</p>
             </div>
           </div>
         </Card>
@@ -267,7 +269,7 @@ export default function PrenatalCarePage() {
               <p className="text-3xl font-bold">
                 {patients.filter((p) => p.pregnancyStatus === 'pregnant').length}
               </p>
-              <p className="text-sm opacity-80">Active Pregnancies</p>
+              <p className="text-sm opacity-80">{t("prenatalPage.activePregnancies")}</p>
             </div>
           </div>
         </Card>
@@ -278,7 +280,7 @@ export default function PrenatalCarePage() {
               <p className="text-3xl font-bold">
                 {visits.filter((v) => v.riskFlags.length > 0).length}
               </p>
-              <p className="text-sm opacity-80">Visits with Risk Flags</p>
+              <p className="text-sm opacity-80">{t("prenatalPage.visitsWithRiskFlags")}</p>
             </div>
           </div>
         </Card>
@@ -287,7 +289,7 @@ export default function PrenatalCarePage() {
             <Clock className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">8</p>
-              <p className="text-sm opacity-80">Appointments Today</p>
+              <p className="text-sm opacity-80">{t("prenatalPage.appointmentsToday")}</p>
             </div>
           </div>
         </Card>
@@ -301,7 +303,7 @@ export default function PrenatalCarePage() {
             <div className="flex gap-3 items-center">
               <div className="flex-1">
                 <Input
-                  placeholder="Search by patient name..."
+                  placeholder={t("appCopy.search.patientName")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   icon={Search}
@@ -309,10 +311,10 @@ export default function PrenatalCarePage() {
               </div>
               <Select
                 options={[
-                  { value: 'all', label: 'All Visits' },
-                  { value: 'today', label: 'Today' },
-                  { value: 'week', label: 'This Week' },
-                  { value: 'month', label: 'This Month' },
+                  { value: 'all', label: t("prenatalPage.allVisits") },
+                  { value: 'today', label: t("prenatalPage.filterToday") },
+                  { value: 'week', label: t("prenatalPage.filterThisWeek") },
+                  { value: 'month', label: t("prenatalPage.filterThisMonth") },
                 ]}
                 value="all"
               />
@@ -325,7 +327,7 @@ export default function PrenatalCarePage() {
                 disabled={loading}
               >
                 <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
-                Refresh
+                {t("common.refresh")}
               </Button>
               <Button
                 variant="outline"
@@ -339,11 +341,11 @@ export default function PrenatalCarePage() {
                 }}
               >
                 <Download className="w-4 h-4" />
-                Export
+                {t("common.export")}
               </Button>
               <Button variant="primary" onClick={() => setShowNewVisitModal(true)}>
                 <Plus className="w-4 h-4" />
-                New Visit
+                {t("prenatalPage.newVisit")}
               </Button>
             </div>
           </Card>
@@ -353,7 +355,7 @@ export default function PrenatalCarePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Stethoscope className="w-5 h-5 text-brand-500" />
-                Recent Prenatal Visits
+                {t("prenatalPage.recentPrenatalVisits")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -438,7 +440,7 @@ export default function PrenatalCarePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-brand-500" />
-                Vitals Trend
+                {t("prenatalPage.vitalsTrend")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -474,12 +476,12 @@ export default function PrenatalCarePage() {
 
           <Card variant="elevated">
             <CardHeader>
-              <CardTitle>Quick Reference</CardTitle>
+              <CardTitle>{t("appCopy.prenatalPage.quickReference")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
-                  <h4 className="font-medium text-emerald-800 dark:text-emerald-300">Normal Ranges</h4>
+                  <h4 className="font-medium text-emerald-800 dark:text-emerald-300">{t("prenatalPage.normalRanges")}</h4>
                   <ul className="mt-2 space-y-1 text-sm text-emerald-700 dark:text-emerald-400">
                     <li>• BP: 90/60 - 120/80 mmHg</li>
                     <li>• FHR: 110-160 bpm</li>
@@ -488,7 +490,7 @@ export default function PrenatalCarePage() {
                   </ul>
                 </div>
                 <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                  <h4 className="font-medium text-amber-800 dark:text-amber-300">Warning Signs</h4>
+                  <h4 className="font-medium text-amber-800 dark:text-amber-300">{t("prenatalPage.warningSigns")}</h4>
                   <ul className="mt-2 space-y-1 text-sm text-amber-700 dark:text-amber-400">
                     <li>• BP ≥ 140/90 mmHg</li>
                     <li>• Proteinuria</li>
@@ -507,7 +509,7 @@ export default function PrenatalCarePage() {
       <Modal
         isOpen={showVisitModal}
         onClose={() => setShowVisitModal(false)}
-        title={`Visit Details`}
+        title={t("prenatalPage.visitDetails")}
         size="lg"
       >
         {selectedVisit && (
@@ -521,40 +523,40 @@ export default function PrenatalCarePage() {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500">Date</p>
+                <p className="text-sm text-slate-500">{t("common.date")}</p>
                 <p className="font-semibold">{formatDate(selectedVisit.visitDate)}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-slate-500">Conducted By</p>
+                <p className="text-sm text-slate-500">{t("prenatalPage.conductedBy")}</p>
                 <p className="font-semibold">{selectedVisit.conductedBy}</p>
               </div>
             </div>
 
             {/* Vitals Grid */}
             <div>
-              <h4 className="font-semibold mb-3">Vital Signs</h4>
+              <h4 className="font-semibold mb-3">{t("prenatalPage.vitalSigns")}</h4>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-center">
                   <Activity className="w-5 h-5 mx-auto text-brand-500" />
                   <p className="text-2xl font-bold mt-2">
                     {selectedVisit.vitals.bloodPressureSystolic}/{selectedVisit.vitals.bloodPressureDiastolic}
                   </p>
-                  <p className="text-sm text-slate-500">Blood Pressure</p>
+                  <p className="text-sm text-slate-500">{t("prenatalPage.bloodPressure")}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-center">
                   <Heart className="w-5 h-5 mx-auto text-red-500" />
-                  <p className="text-2xl font-bold mt-2">{selectedVisit.vitals.fetalHeartRate || 'N/A'}</p>
-                  <p className="text-sm text-slate-500">FHR (bpm)</p>
+                  <p className="text-2xl font-bold mt-2">{selectedVisit.vitals.fetalHeartRate || t("common.na")}</p>
+                  <p className="text-sm text-slate-500">{t("prenatalPage.fhrBpm")}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-center">
                   <Weight className="w-5 h-5 mx-auto text-purple-500" />
                   <p className="text-2xl font-bold mt-2">{selectedVisit.vitals.weight}</p>
-                  <p className="text-sm text-slate-500">Weight (kg)</p>
+                  <p className="text-sm text-slate-500">{t("prenatalPage.weightKg")}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800 text-center">
                   <Thermometer className="w-5 h-5 mx-auto text-amber-500" />
                   <p className="text-2xl font-bold mt-2">{selectedVisit.vitals.temperature}</p>
-                  <p className="text-sm text-slate-500">Temp (°C)</p>
+                  <p className="text-sm text-slate-500">{t("prenatalPage.tempCelsius")}</p>
                 </div>
               </div>
             </div>
@@ -562,7 +564,7 @@ export default function PrenatalCarePage() {
             {/* Symptoms & Medications */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h4 className="font-semibold mb-3">Symptoms</h4>
+                <h4 className="font-semibold mb-3">{t("prenatalPage.symptoms")}</h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedVisit.symptoms.length > 0 ? (
                     selectedVisit.symptoms.map((symptom) => (
@@ -571,12 +573,12 @@ export default function PrenatalCarePage() {
                       </Badge>
                     ))
                   ) : (
-                    <p className="text-slate-500 text-sm">No symptoms reported</p>
+                    <p className="text-slate-500 text-sm">{t("prenatalPage.noSymptomsReported")}</p>
                   )}
                 </div>
               </div>
               <div>
-                <h4 className="font-semibold mb-3">Medications</h4>
+                <h4 className="font-semibold mb-3">{t("prenatalPage.medications")}</h4>
                 <div className="flex flex-wrap gap-2">
                   {selectedVisit.medications.map((med) => (
                     <Badge key={med} variant="info" size="md">
@@ -592,7 +594,7 @@ export default function PrenatalCarePage() {
               <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
-                  <h4 className="font-semibold text-amber-800 dark:text-amber-300">Risk Flags</h4>
+                  <h4 className="font-semibold text-amber-800 dark:text-amber-300">{t("prenatalPage.riskFlags")}</h4>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {selectedVisit.riskFlags.map((flag) => (
@@ -606,7 +608,7 @@ export default function PrenatalCarePage() {
 
             {/* Notes */}
             <div>
-              <h4 className="font-semibold mb-3">Clinical Notes</h4>
+              <h4 className="font-semibold mb-3">{t("prenatalPage.clinicalNotes")}</h4>
               <p className="text-slate-600 dark:text-slate-400 p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
                 {selectedVisit.notes}
               </p>
@@ -617,7 +619,7 @@ export default function PrenatalCarePage() {
               <div className="p-4 rounded-lg bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-brand-600" />
-                  <span className="font-medium">Next Appointment:</span>
+                  <span className="font-medium">{t("prenatalPage.nextAppointment")}</span>
                   <span>{formatDate(selectedVisit.nextAppointment)}</span>
                 </div>
               </div>
@@ -649,17 +651,17 @@ export default function PrenatalCarePage() {
                 }}
               >
                 <FileText className="w-4 h-4" />
-                Edit Visit
+                {t("prenatalPage.editVisit")}
               </Button>
               <Button type="button" variant="outline" onClick={() => window.print()}>
-                Print Summary
+                {t("prenatalPage.printSummary")}
               </Button>
             </div>
           </div>
         )}
       </Modal>
 
-      <Modal isOpen={showNewVisitModal} onClose={() => setShowNewVisitModal(false)} title="New Prenatal Visit" size="md">
+      <Modal isOpen={showNewVisitModal} onClose={() => setShowNewVisitModal(false)} title={t("appCopy.modal.newPrenatalVisit")} size="md">
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
@@ -706,16 +708,16 @@ export default function PrenatalCarePage() {
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
             <Button variant="primary" onClick={handleCreateVisit} isLoading={creatingVisit}>
-              Create Visit
+              {t("prenatalPage.newVisit")}
             </Button>
             <Button variant="ghost" onClick={() => setShowNewVisitModal(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </div>
       </Modal>
 
-      <Modal isOpen={showEditVisitModal} onClose={() => setShowEditVisitModal(false)} title="Edit Prenatal Visit" size="md">
+      <Modal isOpen={showEditVisitModal} onClose={() => setShowEditVisitModal(false)} title={t("appCopy.modal.editPrenatalVisit")} size="md">
         <div className="space-y-4">
           <Input
             label="Visit Date"
@@ -747,10 +749,10 @@ export default function PrenatalCarePage() {
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
             <Button variant="primary" onClick={handleEditVisit} isLoading={updatingVisit}>
-              Save Changes
+              {t("patientsPage.saveChangesButton")}
             </Button>
             <Button variant="ghost" onClick={() => setShowEditVisitModal(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </div>

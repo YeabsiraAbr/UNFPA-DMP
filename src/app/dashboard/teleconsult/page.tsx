@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -61,6 +62,7 @@ function conversationToTeleconsult(c: Conversation): TeleconsultRequest {
 }
 
 export default function TeleconsultPage() {
+  const { t } = useTranslation()
   const [statusFilter, setStatusFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
   const [selectedConsult, setSelectedConsult] = useState<TeleconsultRequest | null>(null)
@@ -115,18 +117,18 @@ export default function TeleconsultPage() {
   if (loading) {
     return (
       <DashboardLayout
-        title="Teleconsult"
-        subtitle="Asynchronous specialist consultations"
+        title={t("appCopy.shell.teleconsultTitle")}
+        subtitle={t("appCopy.shell.teleconsultSubtitle")}
       >
-        <LoadingState message="Loading teleconsults…" />
+        <LoadingState message={t("appCopy.loading.teleconsult")} />
       </DashboardLayout>
     )
   }
 
   return (
     <DashboardLayout
-      title="Teleconsult"
-      subtitle="Asynchronous specialist consultations"
+      title={t("appCopy.shell.teleconsultTitle")}
+      subtitle={t("appCopy.shell.teleconsultSubtitle")}
     >
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -135,7 +137,7 @@ export default function TeleconsultPage() {
             <MessageSquare className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">{consults.length}</p>
-              <p className="text-sm opacity-80">Total Requests</p>
+              <p className="text-sm opacity-80">{t("teleconsultPage.totalRequests")}</p>
             </div>
           </div>
         </Card>
@@ -144,9 +146,9 @@ export default function TeleconsultPage() {
             <Clock className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {consults.filter((t) => t.status === 'pending' || t.status === 'in_review').length}
+                {consults.filter((tc) => tc.status === 'pending' || tc.status === 'in_review').length}
               </p>
-              <p className="text-sm opacity-80">Awaiting Response</p>
+              <p className="text-sm opacity-80">{t("teleconsultPage.awaitingResponse")}</p>
             </div>
           </div>
         </Card>
@@ -155,9 +157,9 @@ export default function TeleconsultPage() {
             <AlertTriangle className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {consults.filter((t) => t.priority === 'emergency').length}
+                {consults.filter((tc) => tc.priority === 'emergency').length}
               </p>
-              <p className="text-sm opacity-80">Emergency</p>
+              <p className="text-sm opacity-80">{t("teleconsultPage.emergency")}</p>
             </div>
           </div>
         </Card>
@@ -166,9 +168,9 @@ export default function TeleconsultPage() {
             <CheckCircle className="w-8 h-8 opacity-80" />
             <div>
               <p className="text-3xl font-bold">
-                {consults.filter((t) => t.status === 'responded' || t.status === 'closed').length}
+                {consults.filter((tc) => tc.status === 'responded' || tc.status === 'closed').length}
               </p>
-              <p className="text-sm opacity-80">Resolved</p>
+              <p className="text-sm opacity-80">{t("teleconsultPage.resolved")}</p>
             </div>
           </div>
         </Card>
@@ -180,21 +182,21 @@ export default function TeleconsultPage() {
           <div className="flex gap-3">
             <Select
               options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'in_review', label: 'In Review' },
-                { value: 'responded', label: 'Responded' },
-                { value: 'closed', label: 'Closed' },
+                { value: 'all', label: t("teleconsultPage.allStatus") },
+                { value: 'pending', label: t("teleconsultPage.pending") },
+                { value: 'in_review', label: t("teleconsultPage.inReview") },
+                { value: 'responded', label: t("teleconsultPage.responded") },
+                { value: 'closed', label: t("teleconsultPage.closed") },
               ]}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             />
             <Select
               options={[
-                { value: 'all', label: 'All Priorities' },
-                { value: 'routine', label: 'Routine' },
-                { value: 'urgent', label: 'Urgent' },
-                { value: 'emergency', label: 'Emergency' },
+                { value: 'all', label: t("teleconsultPage.allPriorities") },
+                { value: 'routine', label: t("teleconsultPage.routine") },
+                { value: 'urgent', label: t("teleconsultPage.urgent") },
+                { value: 'emergency', label: t("teleconsultPage.emergency") },
               ]}
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
@@ -203,11 +205,11 @@ export default function TeleconsultPage() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => loadConsults()} disabled={loading}>
               <RefreshCcw className={cn('w-4 h-4', loading && 'animate-spin')} />
-              Refresh
+              {t("common.refresh")}
             </Button>
             <Button variant="primary">
               <Plus className="w-4 h-4" />
-              New Teleconsult
+              {t("teleconsultPage.newTeleconsult")}
             </Button>
           </div>
         </div>
@@ -294,17 +296,17 @@ export default function TeleconsultPage() {
       <Modal
         isOpen={showConsultModal}
         onClose={() => setShowConsultModal(false)}
-        title="Teleconsult Details"
+        title={t("appCopy.modal.teleconsultDetails")}
         size="xl"
       >
         {selectedConsult && (
           <Tabs defaultValue="request">
             <TabsList className="mb-6">
-              <TabsTrigger value="request">Request</TabsTrigger>
+              <TabsTrigger value="request">{t("teleconsultPage.tabRequest")}</TabsTrigger>
               <TabsTrigger value="attachments">
-                Attachments ({selectedConsult.attachments.length})
+                {t("teleconsultPage.tabAttachments")} ({selectedConsult.attachments.length})
               </TabsTrigger>
-              {selectedConsult.response && <TabsTrigger value="response">Response</TabsTrigger>}
+              {selectedConsult.response && <TabsTrigger value="response">{t("teleconsultPage.tabResponse")}</TabsTrigger>}
             </TabsList>
 
             <TabsContent value="request">
@@ -333,16 +335,16 @@ export default function TeleconsultPage() {
                 {/* Request Info */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <p className="text-xs text-slate-500">Requested By</p>
+                    <p className="text-xs text-slate-500">{t("teleconsultPage.requestedBy")}</p>
                     <p className="font-semibold">{selectedConsult.requestedBy}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                    <p className="text-xs text-slate-500">Request Date</p>
+                    <p className="text-xs text-slate-500">{t("teleconsultPage.requestDate")}</p>
                     <p className="font-semibold">{formatDate(selectedConsult.requestDate)}</p>
                   </div>
                   {selectedConsult.assignedSpecialist && (
                     <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                      <p className="text-xs text-slate-500">Assigned To</p>
+                      <p className="text-xs text-slate-500">{t("teleconsultPage.assignedTo")}</p>
                       <p className="font-semibold">{selectedConsult.assignedSpecialist}</p>
                     </div>
                   )}
@@ -350,7 +352,7 @@ export default function TeleconsultPage() {
 
                 {/* Chief Complaint */}
                 <div>
-                  <h4 className="font-semibold mb-3">Chief Complaint</h4>
+                  <h4 className="font-semibold mb-3">{t("teleconsultPage.chiefComplaint")}</h4>
                   <p className="text-slate-600 dark:text-slate-400 p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
                     {selectedConsult.chiefComplaint}
                   </p>
@@ -358,7 +360,7 @@ export default function TeleconsultPage() {
 
                 {/* Clinical Notes */}
                 <div>
-                  <h4 className="font-semibold mb-3">Clinical Notes</h4>
+                  <h4 className="font-semibold mb-3">{t("teleconsultPage.clinicalNotes")}</h4>
                   <p className="text-slate-600 dark:text-slate-400 p-4 rounded-lg bg-slate-50 dark:bg-slate-800 whitespace-pre-wrap">
                     {selectedConsult.clinicalNotes}
                   </p>
@@ -388,7 +390,7 @@ export default function TeleconsultPage() {
                     </div>
                     <Button variant="ghost" size="sm">
                       <Eye className="w-4 h-4" />
-                      View
+                      {t("common.view")}
                     </Button>
                   </div>
                 ))}
@@ -412,7 +414,7 @@ export default function TeleconsultPage() {
                   {/* Diagnosis */}
                   {selectedConsult.response.diagnosis && (
                     <div>
-                      <h4 className="font-semibold mb-3">Diagnosis</h4>
+                      <h4 className="font-semibold mb-3">{t("teleconsultPage.diagnosis")}</h4>
                       <p className="text-slate-600 dark:text-slate-400 p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
                         {selectedConsult.response.diagnosis}
                       </p>
@@ -421,7 +423,7 @@ export default function TeleconsultPage() {
 
                   {/* Recommendations */}
                   <div>
-                    <h4 className="font-semibold mb-3">Recommendations</h4>
+                    <h4 className="font-semibold mb-3">{t("teleconsultPage.recommendations")}</h4>
                     <p className="text-slate-600 dark:text-slate-400 p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
                       {selectedConsult.response.recommendations}
                     </p>
@@ -429,7 +431,7 @@ export default function TeleconsultPage() {
 
                   {/* Follow-up Instructions */}
                   <div>
-                    <h4 className="font-semibold mb-3">Follow-up Instructions</h4>
+                    <h4 className="font-semibold mb-3">{t("teleconsultPage.followUpInstructions")}</h4>
                     <p className="text-slate-600 dark:text-slate-400 p-4 rounded-lg bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800">
                       {selectedConsult.response.followUpInstructions}
                     </p>
@@ -438,7 +440,7 @@ export default function TeleconsultPage() {
                   {/* Prescriptions */}
                   {selectedConsult.response.prescriptions && selectedConsult.response.prescriptions.length > 0 && (
                     <div>
-                      <h4 className="font-semibold mb-3">Prescriptions</h4>
+                      <h4 className="font-semibold mb-3">{t("teleconsultPage.prescriptions")}</h4>
                       <div className="space-y-2">
                         {selectedConsult.response.prescriptions.map((prescription, index) => (
                           <div
@@ -461,14 +463,14 @@ export default function TeleconsultPage() {
               {!selectedConsult.response && (
                 <Button variant="primary">
                   <Send className="w-4 h-4" />
-                  Send Response
+                  {t("teleconsultPage.sendResponse")}
                 </Button>
               )}
-              <Button variant="outline">View Patient Record</Button>
+              <Button variant="outline">{t("teleconsultPage.viewPatientRecord")}</Button>
               {selectedConsult.response && (
                 <Button variant="ghost">
                   <CheckCircle className="w-4 h-4" />
-                  Close Consultation
+                  {t("teleconsultPage.closeConsultation")}
                 </Button>
               )}
             </div>

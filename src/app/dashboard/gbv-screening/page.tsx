@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -13,6 +14,7 @@ import type { GBVScreening, Patient } from '@/services/types'
 import { Plus, Search, Eye, Pencil, Trash2, ShieldAlert, Lock, RefreshCcw, Download } from 'lucide-react'
 
 export default function GBVScreeningPage() {
+  const { t } = useTranslation()
   const [records, setRecords] = useState<GBVScreening[]>([])
   const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
@@ -79,7 +81,7 @@ export default function GBVScreeningPage() {
     setLoading(false)
   }
 
-  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? 'Unknown'
+  const getPatientName = (id: string) => patients.find(p => p.id === id)?.fullName ?? t("common.unknown")
 
   const resetForm = () =>
     setForm({
@@ -199,7 +201,7 @@ export default function GBVScreeningPage() {
   )
 
   return (
-    <DashboardLayout title="GBV Screening" subtitle="Gender-Based Violence screening and clinical registration">
+    <DashboardLayout title={t("appCopy.shell.gbvScreeningTitle")} subtitle={t("appCopy.shell.gbvScreeningSubtitle")}>
       {/* Security Notice */}
       <Card className="mb-6 bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20 border-amber-200 dark:border-amber-800">
         <CardContent className="p-4">
@@ -221,12 +223,12 @@ export default function GBVScreeningPage() {
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6 items-start sm:items-center justify-between">
         <div className="w-full sm:w-80">
-          <Input placeholder="Search by patient name..." icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input placeholder={t("appCopy.search.patientName")} icon={Search} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => { clearCache('patients-list'); loadData() }} disabled={loading}>
             <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {t("common.refresh")}
           </Button>
           <Button
             variant="outline"
@@ -239,18 +241,18 @@ export default function GBVScreeningPage() {
               downloadCsv(`gbv-screening-${new Date().toISOString().slice(0, 10)}.csv`, rows)
             }}
           >
-            <Download className="w-4 h-4" /> Export
+            <Download className="w-4 h-4" /> {t("common.export")}
           </Button>
           <Button variant="primary" onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4" /> New GBV Screening
+            <Plus className="w-4 h-4" /> {t("appCopy.modal.newGbvScreening")}
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <LoadingState message="Loading GBV screening records..." />
+        <LoadingState message={t("appCopy.loading.gbvScreening")} />
       ) : filtered.length === 0 ? (
-        <EmptyState message="No GBV screening records found" />
+        <EmptyState message={t("appCopy.empty.gbvScreening")} />
       ) : (
         <div className="grid gap-4">
           {filtered.map(record => (
@@ -297,10 +299,10 @@ export default function GBVScreeningPage() {
       )}
 
       {/* Create Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New GBV Screening" size="lg">
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title={t("appCopy.modal.newGbvScreening")} size="lg">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("common.patient")}</label>
             <select className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm" value={form.patientId} onChange={e => setForm({ ...form, patientId: e.target.value })}>
               <option value="">Select a patient...</option>
               {patients.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
@@ -311,19 +313,19 @@ export default function GBVScreeningPage() {
             <textarea className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm min-h-[80px]" value={form.gbvHistory} onChange={e => setForm({ ...form, gbvHistory: e.target.value })} placeholder="Document GBV history..." />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Temperature" value={form.temperature} onChange={e => setForm({ ...form, temperature: e.target.value })} placeholder="e.g. 36.5°C" />
+            <Input label={t("appCopy.label.temperature")} value={form.temperature} onChange={e => setForm({ ...form, temperature: e.target.value })} placeholder="e.g. 36.5°C" />
             <Input label="Weight (kg)" type="number" value={form.weightKg} onChange={e => setForm({ ...form, weightKg: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Height (cm)" type="number" value={form.heightCm} onChange={e => setForm({ ...form, heightCm: e.target.value })} />
-            <Input label="Blood Pressure" value={form.bloodPressure} onChange={e => setForm({ ...form, bloodPressure: e.target.value })} placeholder="e.g. 120/80" />
+            <Input label={t("appCopy.label.bloodPressure")} value={form.bloodPressure} onChange={e => setForm({ ...form, bloodPressure: e.target.value })} placeholder="e.g. 120/80" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Pulse" value={form.pulse} onChange={e => setForm({ ...form, pulse: e.target.value })} placeholder="e.g. 72 bpm" />
             <Input label="Respiratory Rate" value={form.respiratoryRate} onChange={e => setForm({ ...form, respiratoryRate: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Oxygen Saturation" value={form.oxygenSaturation} onChange={e => setForm({ ...form, oxygenSaturation: e.target.value })} placeholder="e.g. 98%" />
+            <Input label={t("appCopy.label.oxygenSaturation")} value={form.oxygenSaturation} onChange={e => setForm({ ...form, oxygenSaturation: e.target.value })} placeholder="e.g. 98%" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Physical Examination</label>
@@ -343,39 +345,39 @@ export default function GBVScreeningPage() {
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
             <Button variant="primary" onClick={handleCreate} isLoading={saving}>Create Screening</Button>
-            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+            <Button variant="ghost" onClick={() => setShowCreateModal(false)}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>
 
       {/* Detail Modal */}
-      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="GBV Screening Details" size="lg">
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title={t("appCopy.modal.gbvScreeningDetails")} size="lg">
         {selectedRecord && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><p className="text-xs text-slate-500">Patient</p><p className="font-medium">{getPatientName(selectedRecord.patientId)}</p></div>
-              <div><p className="text-xs text-slate-500">GBV History</p><p className="font-medium">{selectedRecord.gbvHistory ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Temperature</p><p className="font-medium">{selectedRecord.temperature ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Weight (kg)</p><p className="font-medium">{selectedRecord.weightKg ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Height (cm)</p><p className="font-medium">{selectedRecord.heightCm ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">BMI</p><p className="font-medium">{selectedRecord.bmiIndex ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Blood Pressure</p><p className="font-medium">{(selectedRecord as any).bloodPressure ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Pulse</p><p className="font-medium">{(selectedRecord as any).pulse ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Respiratory Rate</p><p className="font-medium">{(selectedRecord as any).respiratoryRate ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Oxygen Saturation</p><p className="font-medium">{(selectedRecord as any).oxygenSaturation ?? 'N/A'}</p></div>
-              <div><p className="text-xs text-slate-500">Physical Examination</p><p className="font-medium">{(selectedRecord as any).physicalExamination ?? 'N/A'}</p></div>
+              <div><p className="text-xs text-slate-500">{t("common.patient")}</p><p className="font-medium">{getPatientName(selectedRecord.patientId)}</p></div>
+              <div><p className="text-xs text-slate-500">GBV History</p><p className="font-medium">{selectedRecord.gbvHistory ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.temperature")}</p><p className="font-medium">{selectedRecord.temperature ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Weight (kg)</p><p className="font-medium">{selectedRecord.weightKg ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Height (cm)</p><p className="font-medium">{selectedRecord.heightCm ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">BMI</p><p className="font-medium">{selectedRecord.bmiIndex ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.bloodPressure")}</p><p className="font-medium">{(selectedRecord as any).bloodPressure ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Pulse</p><p className="font-medium">{(selectedRecord as any).pulse ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Respiratory Rate</p><p className="font-medium">{(selectedRecord as any).respiratoryRate ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">{t("appCopy.label.oxygenSaturation")}</p><p className="font-medium">{(selectedRecord as any).oxygenSaturation ?? t("common.na")}</p></div>
+              <div><p className="text-xs text-slate-500">Physical Examination</p><p className="font-medium">{(selectedRecord as any).physicalExamination ?? t("common.na")}</p></div>
             </div>
             <div>
               <p className="text-xs text-slate-500">Working Diagnosis</p>
-              <p className="font-medium mt-1">{selectedRecord.workingDiagnosis ?? 'N/A'}</p>
+              <p className="font-medium mt-1">{selectedRecord.workingDiagnosis ?? t("common.na")}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">Treatment Plan</p>
-              <p className="font-medium mt-1">{selectedRecord.treatmentPlan ?? 'N/A'}</p>
+              <p className="font-medium mt-1">{selectedRecord.treatmentPlan ?? t("common.na")}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">Treatment Rx</p>
-              <p className="font-medium mt-1">{(selectedRecord as any).treatmentRx ?? 'N/A'}</p>
+              <p className="font-medium mt-1">{(selectedRecord as any).treatmentRx ?? t("common.na")}</p>
             </div>
             <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
               <Button
@@ -387,7 +389,7 @@ export default function GBVScreeningPage() {
                   setShowEditModal(true)
                 }}
               >
-                <Pencil className="w-4 h-4" /> Edit
+                <Pencil className="w-4 h-4" /> {t("common.edit")}
               </Button>
             </div>
           </div>
@@ -402,12 +404,12 @@ export default function GBVScreeningPage() {
           setEditId('')
           resetEditForm()
         }}
-        title="Edit GBV Screening"
+        title={t("appCopy.modal.editGbvScreening")}
         size="lg"
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t("common.patient")}</label>
             <select className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm" value={editForm.patientId} onChange={e => setEditForm({ ...editForm, patientId: e.target.value })}>
               <option value="">Select a patient...</option>
               {patients.map(p => <option key={p.id} value={p.id}>{p.fullName}</option>)}
@@ -418,19 +420,19 @@ export default function GBVScreeningPage() {
             <textarea className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm min-h-[80px]" value={editForm.gbvHistory} onChange={e => setEditForm({ ...editForm, gbvHistory: e.target.value })} placeholder="Document GBV history..." />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Temperature" value={editForm.temperature} onChange={e => setEditForm({ ...editForm, temperature: e.target.value })} placeholder="e.g. 36.5°C" />
+            <Input label={t("appCopy.label.temperature")} value={editForm.temperature} onChange={e => setEditForm({ ...editForm, temperature: e.target.value })} placeholder="e.g. 36.5°C" />
             <Input label="Weight (kg)" type="number" value={editForm.weightKg} onChange={e => setEditForm({ ...editForm, weightKg: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Height (cm)" type="number" value={editForm.heightCm} onChange={e => setEditForm({ ...editForm, heightCm: e.target.value })} />
-            <Input label="Blood Pressure" value={editForm.bloodPressure} onChange={e => setEditForm({ ...editForm, bloodPressure: e.target.value })} placeholder="e.g. 120/80" />
+            <Input label={t("appCopy.label.bloodPressure")} value={editForm.bloodPressure} onChange={e => setEditForm({ ...editForm, bloodPressure: e.target.value })} placeholder="e.g. 120/80" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Pulse" value={editForm.pulse} onChange={e => setEditForm({ ...editForm, pulse: e.target.value })} placeholder="e.g. 72 bpm" />
             <Input label="Respiratory Rate" value={editForm.respiratoryRate} onChange={e => setEditForm({ ...editForm, respiratoryRate: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Oxygen Saturation" value={editForm.oxygenSaturation} onChange={e => setEditForm({ ...editForm, oxygenSaturation: e.target.value })} placeholder="e.g. 98%" />
+            <Input label={t("appCopy.label.oxygenSaturation")} value={editForm.oxygenSaturation} onChange={e => setEditForm({ ...editForm, oxygenSaturation: e.target.value })} placeholder="e.g. 98%" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Physical Examination</label>
@@ -449,8 +451,8 @@ export default function GBVScreeningPage() {
             <textarea className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm min-h-[80px]" value={editForm.treatmentRx} onChange={e => setEditForm({ ...editForm, treatmentRx: e.target.value })} />
           </div>
           <div className="flex gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>Save Changes</Button>
-            <Button variant="ghost" onClick={() => { setShowEditModal(false); setEditId(''); resetEditForm() }}>Cancel</Button>
+            <Button variant="primary" onClick={handleUpdate} isLoading={saving}>{t("common.save")}</Button>
+            <Button variant="ghost" onClick={() => { setShowEditModal(false); setEditId(''); resetEditForm() }}>{t("common.cancel")}</Button>
           </div>
         </div>
       </Modal>

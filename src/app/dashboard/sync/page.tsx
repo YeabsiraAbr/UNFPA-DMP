@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/lib/i18n'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -61,6 +62,8 @@ export default function SyncStatusPage() {
   const [isSyncing, setIsSyncing] = useState(false)
   const [syncData, setSyncData] = useState<{ lastSyncTime?: string } | null>(null)
 
+  const { t } = useTranslation()
+
   const reloadSyncStatus = () => {
     profileService
       .getSyncStatus()
@@ -86,8 +89,8 @@ export default function SyncStatusPage() {
 
   return (
     <DashboardLayout
-      title="Sync Status"
-      subtitle="Data synchronization and offline queue management"
+      title={t("appCopy.shell.syncTitle")}
+      subtitle={t("appCopy.shell.syncSubtitle")}
     >
       {/* Connection Status Banner */}
       <Card className={cn(
@@ -118,7 +121,7 @@ export default function SyncStatusPage() {
                     ? 'text-emerald-800 dark:text-emerald-300'
                     : 'text-red-800 dark:text-red-300'
                 )}>
-                  {DEFAULT_SYNC_STATUS.isOnline ? 'Online - Connected to Server' : 'Offline - No Connection'}
+                  {DEFAULT_SYNC_STATUS.isOnline ? t("syncPage.onlineConnected") : t("syncPage.offlineNoConnection")}
                 </h3>
                 <p className={cn(
                   'text-sm',
@@ -126,14 +129,14 @@ export default function SyncStatusPage() {
                     ? 'text-emerald-700 dark:text-emerald-400'
                     : 'text-red-700 dark:text-red-400'
                 )}>
-                  Last sync: {syncData?.lastSyncTime ? formatRelativeTime(syncData.lastSyncTime) : '—'}
+                  {t("syncPage.lastSync")} {syncData?.lastSyncTime ? formatRelativeTime(syncData.lastSyncTime) : '—'}
                 </p>
               </div>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => reloadSyncStatus()} disabled={isSyncing}>
                 <RefreshCcw className="w-4 h-4" />
-                Refresh status
+                {t("common.refresh")}
               </Button>
               <Button
                 variant="primary"
@@ -142,7 +145,7 @@ export default function SyncStatusPage() {
                 disabled={!DEFAULT_SYNC_STATUS.isOnline}
               >
                 <RefreshCcw className={cn('w-4 h-4', isSyncing && 'animate-spin')} />
-                {isSyncing ? 'Syncing...' : 'Sync Now'}
+                {isSyncing ? t("syncPage.syncing") : t("syncPage.syncNow")}
               </Button>
             </div>
           </div>
@@ -158,7 +161,7 @@ export default function SyncStatusPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{DEFAULT_SYNC_STATUS.pendingUploads}</p>
-              <p className="text-sm text-slate-500">Pending Uploads</p>
+              <p className="text-sm text-slate-500">{t("syncPage.pendingUploads")}</p>
             </div>
           </div>
         </Card>
@@ -169,7 +172,7 @@ export default function SyncStatusPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{DEFAULT_SYNC_STATUS.pendingDownloads}</p>
-              <p className="text-sm text-slate-500">Pending Downloads</p>
+              <p className="text-sm text-slate-500">{t("syncPage.pendingDownloads")}</p>
             </div>
           </div>
         </Card>
@@ -180,7 +183,7 @@ export default function SyncStatusPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{DEFAULT_SYNC_STATUS.conflicts}</p>
-              <p className="text-sm text-slate-500">Conflicts</p>
+              <p className="text-sm text-slate-500">{t("syncPage.conflicts")}</p>
             </div>
           </div>
         </Card>
@@ -191,7 +194,7 @@ export default function SyncStatusPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">—</p>
-              <p className="text-sm text-slate-500">Sync Rate</p>
+              <p className="text-sm text-slate-500">{t("appCopy.syncPage.syncRate")}</p>
             </div>
           </div>
         </Card>
@@ -204,7 +207,7 @@ export default function SyncStatusPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
                 <ArrowUpDown className="w-5 h-5 text-brand-500" />
-                Sync Queue
+                {t("appCopy.syncPage.syncQueue")}
               </CardTitle>
               <Badge variant="warning">{syncQueue.length} pending</Badge>
             </CardHeader>
@@ -262,7 +265,7 @@ export default function SyncStatusPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-red-600">
                   <AlertTriangle className="w-5 h-5" />
-                  Sync Conflicts
+                  {t("appCopy.syncPage.syncConflicts")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -298,9 +301,9 @@ export default function SyncStatusPage() {
                         </div>
                       </div>
                       <div className="flex gap-2 mt-4">
-                        <Button variant="primary" size="sm">Keep Local</Button>
-                        <Button variant="outline" size="sm">Keep Server</Button>
-                        <Button variant="ghost" size="sm">Manual Review</Button>
+                        <Button variant="primary" size="sm">{t("syncPage.keepLocal")}</Button>
+                        <Button variant="outline" size="sm">{t("syncPage.keepServer")}</Button>
+                        <Button variant="ghost" size="sm">{t("syncPage.manualReview")}</Button>
                       </div>
                     </div>
                   ))}
@@ -314,7 +317,7 @@ export default function SyncStatusPage() {
         <div className="space-y-6">
           <Card variant="elevated">
             <CardHeader>
-              <CardTitle>Clinic Sync Status</CardTitle>
+              <CardTitle>{t("appCopy.syncPage.clinicSyncStatus")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -346,11 +349,11 @@ export default function SyncStatusPage() {
 
           <Card variant="elevated">
             <CardHeader>
-              <CardTitle>Storage Info</CardTitle>
+              <CardTitle>{t("appCopy.syncPage.storageInfo")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                <p>Storage information is not available from the API yet.</p>
+                <p>{t("syncPage.storageUnavailable")}</p>
               </div>
             </CardContent>
           </Card>

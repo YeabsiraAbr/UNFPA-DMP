@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "@/lib/i18n";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -17,9 +18,11 @@ import {
   List,
   Image as ImageIcon,
   ZoomIn,
+  ZoomOut,
+  X,
+  Minus,
+  Plus,
   Download,
-  Share2,
-  MessageSquare,
   Clock,
   User,
   Ruler,
@@ -78,6 +81,7 @@ function scanToUltrasoundImage(scan: UltrasoundScan): UltrasoundImage {
 }
 
 export default function UltrasoundPage() {
+  const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -94,6 +98,65 @@ export default function UltrasoundPage() {
     gestationalAge: number | "";
   }>({ description: "", gestationalAge: "" });
   const [editing, setEditing] = useState(false);
+  const [marking, setMarking] = useState(false);
+  const [showZoomModal, setShowZoomModal] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const isPanning = useRef(false);
+  const panStart = useRef({ x: 0, y: 0 });
+  const panOffsetStart = useRef({ x: 0, y: 0 });
+
+  const resetZoom = useCallback(() => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
+
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel((z) => Math.min(z + 0.5, 5));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel((z) => {
+      const next = Math.max(z - 0.5, 1);
+      if (next === 1) setPanOffset({ x: 0, y: 0 });
+      return next;
+    });
+  }, []);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      setZoomLevel((z) => Math.min(z + 0.25, 5));
+    } else {
+      setZoomLevel((z) => {
+        const next = Math.max(z - 0.25, 1);
+        if (next === 1) setPanOffset({ x: 0, y: 0 });
+        return next;
+      });
+    }
+  }, []);
+
+  const handlePanStart = useCallback(
+    (e: React.MouseEvent) => {
+      if (zoomLevel <= 1) return;
+      isPanning.current = true;
+      panStart.current = { x: e.clientX, y: e.clientY };
+      panOffsetStart.current = { ...panOffset };
+    },
+    [zoomLevel, panOffset]
+  );
+
+  const handlePanMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanning.current) return;
+    setPanOffset({
+      x: panOffsetStart.current.x + (e.clientX - panStart.current.x),
+      y: panOffsetStart.current.y + (e.clientY - panStart.current.y),
+    });
+  }, []);
+
+  const handlePanEnd = useCallback(() => {
+    isPanning.current = false;
+  }, []);
 
   const loadScansForPatients = async (pList: Patient[]) => {
     if (!pList.length) {
@@ -202,6 +265,28 @@ export default function UltrasoundPage() {
     }
   };
 
+  const handleMarkAsReviewed = async (id: string) => {
+    setMarking(true);
+    try {
+      const res = await ultrasoundService.update(id, {});
+      const raw = res as unknown as Record<string, unknown>;
+      const scanRaw = (raw.scan ?? raw) as UltrasoundScan;
+      if (res.success) {
+        const updated = scanToUltrasoundImage(scanRaw);
+        updated.reviewStatus = "reviewed";
+        updated.reviewedBy = "Current User";
+        setUltrasounds((prev) =>
+          prev.map((u) => (u.id === id ? updated : u))
+        );
+        if (selectedImage?.id === id) setSelectedImage(updated);
+      }
+    } catch {
+      /* ignore */
+    } finally {
+      setMarking(false);
+    }
+  };
+
   const getPatientName = (patientId: string) => {
     const patient = patients.find((p) => p.id === patientId);
     return patient?.fullName || "Unknown";
@@ -260,8 +345,8 @@ export default function UltrasoundPage() {
 
   return (
     <DashboardLayout
-      title="Ultrasound Imaging"
-      subtitle="Capture, store, and review ultrasound scans"
+      title={t("appCopy.shell.ultrasoundTitle")}
+      subtitle={t("appCopy.shell.ultrasoundSubtitle")}
     >
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -272,7 +357,7 @@ export default function UltrasoundPage() {
             </div>
             <div>
               <p className="text-2xl font-bold">{ultrasounds.length}</p>
-              <p className="text-sm text-slate-500">Total Scans</p>
+              <p className="text-sm text-slate-500">{t("ultrasoundPage.totalScans")}</p>
             </div>
           </div>
         </Card>
@@ -288,7 +373,7 @@ export default function UltrasoundPage() {
                     .length
                 }
               </p>
-              <p className="text-sm text-slate-500">Pending Review</p>
+              <p className="text-sm text-slate-500">{t("ultrasoundPage.pendingReview")}</p>
             </div>
           </div>
         </Card>
@@ -304,7 +389,7 @@ export default function UltrasoundPage() {
                     .length
                 }
               </p>
-              <p className="text-sm text-slate-500">Flagged</p>
+              <p className="text-sm text-slate-500">{t("ultrasoundPage.flagged")}</p>
             </div>
           </div>
         </Card>
@@ -320,7 +405,7 @@ export default function UltrasoundPage() {
                     .length
                 }
               </p>
-              <p className="text-sm text-slate-500">Reviewed</p>
+              <p className="text-sm text-slate-500">{t("ultrasoundPage.reviewed")}</p>
             </div>
           </div>
         </Card>
@@ -332,7 +417,7 @@ export default function UltrasoundPage() {
           <div className="flex gap-3 flex-wrap">
             <div className="w-64">
               <Input
-                placeholder="Search by patient..."
+                placeholder={t("appCopy.search.ultrasoundPatient")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 icon={Search}
@@ -340,10 +425,10 @@ export default function UltrasoundPage() {
             </div>
             <Select
               options={[
-                { value: "all", label: "All Status" },
-                { value: "pending", label: "Pending Review" },
-                { value: "reviewed", label: "Reviewed" },
-                { value: "flagged", label: "Flagged" },
+                { value: "all", label: t("ultrasoundPage.allStatus") },
+                { value: "pending", label: t("ultrasoundPage.pendingReview") },
+                { value: "reviewed", label: t("ultrasoundPage.reviewed") },
+                { value: "flagged", label: t("ultrasoundPage.flagged") },
               ]}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -543,7 +628,7 @@ export default function UltrasoundPage() {
       <Modal
         isOpen={showImageModal}
         onClose={() => setShowImageModal(false)}
-        title="Ultrasound Details"
+        title={t("appCopy.modal.ultrasoundDetails")}
         size="xl"
       >
         {selectedImage && (
@@ -586,6 +671,13 @@ export default function UltrasoundPage() {
                   variant="ghost"
                   size="sm"
                   className="bg-black/50 text-white hover:bg-black/70"
+                  onClick={() => {
+                    if (selectedImage?.imageUrl) {
+                      resetZoom();
+                      setShowZoomModal(true);
+                    }
+                  }}
+                  disabled={!selectedImage.imageUrl}
                 >
                   <ZoomIn className="w-4 h-4" />
                 </Button>
@@ -605,23 +697,23 @@ export default function UltrasoundPage() {
             {/* Patient & Capture Info */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                <p className="text-xs text-slate-500">Patient</p>
+                <p className="text-xs text-slate-500">{t("common.patient")}</p>
                 <p className="font-semibold">
                   {getPatientName(selectedImage.patientId)}
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                <p className="text-xs text-slate-500">Capture Date</p>
+                <p className="text-xs text-slate-500">{t("ultrasoundPage.captureDate")}</p>
                 <p className="font-semibold">
                   {formatDate(selectedImage.captureDate)}
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                <p className="text-xs text-slate-500">Captured By</p>
+                <p className="text-xs text-slate-500">{t("ultrasoundPage.capturedBy")}</p>
                 <p className="font-semibold">{selectedImage.capturedBy}</p>
               </div>
               <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
-                <p className="text-xs text-slate-500">Review Status</p>
+                <p className="text-xs text-slate-500">{t("ultrasoundPage.reviewStatus")}</p>
                 <div className="flex items-center gap-2">
                   {statusIcon[selectedImage.reviewStatus]}
                   <span className="font-semibold capitalize">
@@ -636,7 +728,7 @@ export default function UltrasoundPage() {
               <div>
                 <h4 className="font-semibold mb-3 flex items-center gap-2">
                   <Ruler className="w-4 h-4 text-brand-500" />
-                  Measurements
+                  {t("ultrasoundPage.measurements")}
                 </h4>
                 <div className="grid grid-cols-5 gap-3">
                   {selectedImage.measurements.bpd && (
@@ -690,7 +782,7 @@ export default function UltrasoundPage() {
 
             {/* Findings */}
             <div>
-              <h4 className="font-semibold mb-3">Findings</h4>
+              <h4 className="font-semibold mb-3">{t("ultrasoundPage.findings")}</h4>
               <p className="text-slate-600 dark:text-slate-400 p-4 rounded-lg bg-slate-50 dark:bg-slate-800">
                 {selectedImage.findings}
               </p>
@@ -698,7 +790,7 @@ export default function UltrasoundPage() {
 
             {/* Annotations */}
             <div>
-              <h4 className="font-semibold mb-3">Annotations</h4>
+              <h4 className="font-semibold mb-3">{t("ultrasoundPage.annotations")}</h4>
               <div className="flex flex-wrap gap-2">
                 {selectedImage.annotations.map((annotation) => (
                   <Badge key={annotation} variant="outline" size="md">
@@ -736,7 +828,7 @@ export default function UltrasoundPage() {
                 }}
               >
                 <Pencil className="w-4 h-4" />
-                Edit
+                {t("common.edit")}
               </Button>
               <Button
                 variant="outline"
@@ -744,20 +836,18 @@ export default function UltrasoundPage() {
                 onClick={() => handleDelete(selectedImage.id)}
               >
                 <Trash2 className="w-4 h-4" />
-                Delete
+                {t("common.delete")}
               </Button>
-              <Button variant="primary">
-                <Eye className="w-4 h-4" />
-                Mark as Reviewed
-              </Button>
-              <Button variant="outline">
-                <MessageSquare className="w-4 h-4" />
-                Request Teleconsult
-              </Button>
-              <Button variant="ghost">
-                <Share2 className="w-4 h-4" />
-                Share
-              </Button>
+              {selectedImage.reviewStatus !== "reviewed" && (
+                <Button
+                  variant="primary"
+                  onClick={() => handleMarkAsReviewed(selectedImage.id)}
+                  disabled={marking}
+                >
+                  <Eye className="w-4 h-4" />
+                  {marking ? `${t("common.loading")}` : t("ultrasoundPage.markAsReviewed")}
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -769,7 +859,7 @@ export default function UltrasoundPage() {
           setShowEditModal(false);
           setEditId(null);
         }}
-        title="Edit scan"
+        title={t("ultrasoundPage.editScanTitle")}
         size="md"
       >
         <div className="space-y-4">
@@ -807,14 +897,99 @@ export default function UltrasoundPage() {
               }}
               disabled={editing}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button variant="primary" onClick={handleEdit} disabled={editing}>
-              {editing ? "Saving…" : "Save changes"}
+              {editing ? `${t("common.loading")}` : t("common.save")}
             </Button>
           </div>
         </div>
       </Modal>
+
+      {/* Zoom Modal */}
+      {showZoomModal && selectedImage?.imageUrl && (
+        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col">
+          {/* Toolbar */}
+          <div className="flex items-center justify-between px-4 py-3 bg-black/60 backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-white text-sm">
+              <span className="font-medium">
+                {getPatientName(selectedImage.patientId)}
+              </span>
+              <span className="text-white/50">•</span>
+              <span className="text-white/70">
+                {selectedImage.gestationalAge.weeks}w{selectedImage.gestationalAge.days}d
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 1}
+              >
+                <Minus className="w-4 h-4" />
+              </Button>
+              <button
+                className="text-white text-xs font-mono min-w-[4rem] text-center hover:bg-white/10 rounded px-2 py-1"
+                onClick={resetZoom}
+              >
+                {Math.round(zoomLevel * 100)}%
+              </button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 5}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+              <div className="w-px h-5 bg-white/20 mx-2" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-white hover:bg-white/10"
+                onClick={() => {
+                  setShowZoomModal(false);
+                  resetZoom();
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Zoomable image area */}
+          <div
+            className="flex-1 overflow-hidden select-none"
+            style={{ cursor: zoomLevel > 1 ? "grab" : "zoom-in" }}
+            onWheel={handleWheel}
+            onMouseDown={(e) => {
+              if (zoomLevel > 1) {
+                handlePanStart(e);
+              } else {
+                handleZoomIn();
+              }
+            }}
+            onMouseMove={handlePanMove}
+            onMouseUp={handlePanEnd}
+            onMouseLeave={handlePanEnd}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <img
+                src={selectedImage.imageUrl}
+                alt="Ultrasound zoom"
+                className="max-w-full max-h-full object-contain transition-transform duration-150 ease-out"
+                style={{
+                  transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+                }}
+                draggable={false}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
