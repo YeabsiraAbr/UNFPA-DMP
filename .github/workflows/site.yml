@@ -1,0 +1,47 @@
+name: Deploy Frontend on site
+
+on:
+  push:
+    branches: 
+      - main
+  workflow_dispatch:
+  
+jobs:
+  deploy:
+    name: Deploy to ${{ matrix.server }}
+    runs-on: [self-hosted, "${{ matrix.server }}"]
+    strategy:
+      matrix:
+        include:
+          - server: server-1a
+            env_secret: ENV_BLOB_SERVER_A
+          - server: server-1b
+            env_secret: ENV_BLOB_SERVER_B
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Sync to deploy directory
+        run: rsync -a ./ /opt/dmp/ui/
+      - name: Write environment file
+        run: |
+          echo "${{ secrets[matrix.env_secret] }}" > /opt/dmp/ui/.env
+          chmod 600 /opt/dmp/ui/.env
+
+      - name: Install dependencies
+        working-directory: /opt/dmp/ui
+        run: npm install
+
+      - name: Build
+        working-directory: /opt/dmp/ui
+        run: npm run build
+
+      - name: Reload PM2
+        run: pm2 reload dmp-ui --update-env
+
+      - name: Health check
+        run: |
+          sleep 10
+          curl -f http://localhost:4000 || exit 1
